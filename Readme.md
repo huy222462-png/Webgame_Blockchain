@@ -1,6 +1,8 @@
 them add readme
- chạy Backend -> node server.js
- chạy Frontend -> npm run dev
+chạy Backend -> node server.js
+chạy Frontend -> npm run dev
 
- mongo pass: 88888888
- link: mongodb+srv://toan226464_db_user:88888888@cluster0.2re7d7m.mongodb.net/?appName=Cluster0
+IMPORTANT: database credentials were previously committed here. Those lines have been removed for security.
+Please create a `.env` file at the project root with your MongoDB connection string. Example in `.env.example`.
+
+If a password or URI was leaked, rotate the credential immediately (change the user's password or create a new DB user) and do not commit secrets to the repo.
