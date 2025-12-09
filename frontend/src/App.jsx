@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -21,6 +21,82 @@ function App(){
       window.ethereum.on('chainChanged',(c)=>setChain(c))
     }
   },[])
+  const [profile, setProfile] = useState({ name:'', avatar:null })
+  const fileInputRef = useRef(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  // load/save profile (name + avatar) per account in localStorage
+  useEffect(()=>{
+    if(account){
+      const key = `userData:${account}`
+      const raw = localStorage.getItem(key)
+      if(raw){
+        try{
+          const obj = JSON.parse(raw)
+          setProfile(obj)
+        }catch(e){
+          console.warn('Invalid profile JSON', e)
+        }
+      }else{
+        setProfile({ name: '', avatar: null })
+      }
+    }else{
+      setProfile({ name: '', avatar: null })
+    }
+  }, [account])
+
+  function saveProfile(newProfile){
+    setProfile(newProfile)
+    if(account){
+      const key = `userData:${account}`
+      localStorage.setItem(key, JSON.stringify(newProfile))
+    }
+  }
+
+  function onAvatarClick(){
+    setMenuOpen(open => !open)
+  }
+
+  async function onFileChange(e){
+    const f = e.target.files && e.target.files[0]
+    if(!f) return
+
+    // If backend available and account set, try upload to server for persistent storage
+    if(account){
+      try{
+        const fd = new FormData()
+        fd.append('avatar', f)
+        const resp = await fetch(`${BASE_URL}/api/avatar/${account}`, {
+          method: 'POST',
+          body: fd
+        })
+        const json = await resp.json()
+        if(resp.ok && json.success && json.url){
+          saveProfile({ ...profile, avatar: json.url })
+          return
+        }else{
+          console.warn('Upload failed, fallback to local', json)
+        }
+      }catch(err){
+        console.warn('Upload failed, fallback to local', err)
+      }
+    }
+
+    // Fallback: store as data URL in localStorage (works offline, but not cross-device)
+    const reader = new FileReader()
+    reader.onload = () => {
+      saveProfile({ ...profile, avatar: reader.result })
+    }
+    reader.readAsDataURL(f)
+  }
+
+  function removeAvatar(){
+    saveProfile({ ...profile, avatar: null })
+  }
+
+  function updateName(e){
+    saveProfile({ ...profile, name: e.target.value })
+  }
 
   async function connect(){
     if(!window.ethereum){
@@ -79,6 +155,30 @@ function App(){
       <header>
         <h1>Web Game Blockchain (React)</h1>
         <p className="desc">Đăng nhập bằng MetaMask để chơi</p>
+
+        <div className="avatar-container">
+          <div className="avatar-bubble" title={profile.name || account || 'No account'} onClick={onAvatarClick}>
+            {profile.avatar ? <img src={profile.avatar} alt="avatar"/> : (profile.name ? profile.name[0].toUpperCase() : (account? account[2]: '?'))}
+          </div>
+
+          {menuOpen && (
+            <div className="avatar-menu">
+              <div className="menu-row">Tài khoản: <strong>{account? shortAddr(account): '—'}</strong></div>
+              <div className="menu-row">
+                <label>Họ tên:</label>
+                <input value={profile.name || ''} onChange={updateName} placeholder="Tên hiển thị" />
+              </div>
+              <div className="menu-row">
+                <label>Avatar:</label>
+                <div className="menu-actions">
+                  <button onClick={()=>fileInputRef.current && fileInputRef.current.click()}>Tải ảnh</button>
+                  <button onClick={removeAvatar} disabled={!profile.avatar}>Xoá</button>
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{display:'none'}} onChange={onFileChange} />
+              </div>
+            </div>
+          )}
+        </div>
       </header>
 
       <section className="card">

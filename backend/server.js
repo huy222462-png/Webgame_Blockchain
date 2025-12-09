@@ -6,12 +6,19 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes');
+const avatarRoutes = require('./routes/avatarRoutes');
+const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
 app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
+// serve uploaded avatars
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/avatar', avatarRoutes);
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/webgame';
 

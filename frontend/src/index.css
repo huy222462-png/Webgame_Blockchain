@@ -16,3 +16,15 @@ button[disabled]{opacity:0.5;cursor:not-allowed}
 .info{color:var(--muted);line-height:1.6}
 .game-area{margin-top:12px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.03);min-height:100px;color:var(--muted);display:flex;align-items:center}
 .foot{color:var(--muted);font-size:13px;margin-top:8px}
+
+/* avatar top-right */
+.avatar-container{position:absolute;right:20px;top:18px}
+.avatar-bubble{width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;cursor:pointer;overflow:hidden}
+.avatar-bubble img{width:100%;height:100%;object-fit:cover}
+.avatar-menu{width:260px;background:var(--card);padding:10px;border-radius:10px;color:var(--muted);margin-top:8px;display:flex;flex-direction:column;gap:8px}
+.avatar-menu .menu-row{display:flex;flex-direction:column}
+.avatar-menu input[type="text"], .avatar-menu input[type="file"]{padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
+.avatar-menu .menu-actions{display:flex;gap:8px;margin-top:6px}
+
+/* make header area position relative to allow absolute avatar */
+header{position:relative}
