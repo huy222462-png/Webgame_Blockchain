@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
+import TaiXiuGame from './TaiXiuGame'
 import FishingGame from './FishingGame'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -14,6 +15,7 @@ function App(){
   const [chain, setChain] = useState(null)
   const [status, setStatus] = useState('Chưa kết nối')
   const [message, setMessage] = useState('')
+  const [selectedGame, setSelectedGame] = useState('taixiu')
 
   useEffect(()=>{
     if(window.ethereum){
@@ -199,11 +201,21 @@ function App(){
         <div style={{marginBottom:8}}>
           <button onClick={startGame} disabled={!account}>Bắt đầu trò chơi</button>
         </div>
-        <div className="game-area">
-          {message || 'Trò chơi sẽ hiện ở đây'}
-        </div>
-        <div style={{marginTop:12}}>
-          <FishingGame account={account} />
+
+        {/* Box under the start button: choose which game to play */}
+        <div className="game-area" style={{flexDirection:'column',alignItems:'flex-start'}}>
+          <div style={{marginBottom:10, width:'100%'}}>
+            <label style={{marginRight:8}}>Chọn trò chơi:</label>
+            <select value={selectedGame} onChange={(e)=>setSelectedGame(e.target.value)}>
+              <option value="taixiu">Tài Xỉu</option>
+              <option value="fishing">Câu cá (coming soon)</option>
+            </select>
+          </div>
+
+          <div style={{width:'100%'}}>
+            {selectedGame === 'taixiu' && <TaiXiuGame account={account} />}
+            {selectedGame === 'fishing' && <FishingGame account={account} />}
+          </div>
         </div>
       </section>
 

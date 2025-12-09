@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 
 // Simple demo fishing game
-const DEFAULT_BALANCE = 100
+const DEFAULT_BALANCE = 5000000
 
 const RODS = [
   { id: 'basic', name: 'Cần gỗ', price: 0, power: 1, desc: 'Cần cơ bản' },
