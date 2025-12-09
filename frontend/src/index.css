@@ -1,0 +1,18 @@
+:root{
+  --bg:#0f1720;
+  --card:#0b1220;
+  --accent:#4f46e5;
+  --muted:#9aa4b2;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Segoe UI, Roboto, Arial;background:linear-gradient(180deg,#071017,#0b1220);color:#e6eef6}
+.app{max-width:900px;margin:28px auto;padding:20px}
+h1{margin:0 0 6px}
+.desc{color:var(--muted);margin:0 0 16px}
+.card{background:var(--card);padding:14px;border-radius:10px;margin-bottom:16px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+.controls{display:flex;gap:10px;margin-bottom:10px}
+button{background:var(--accent);color:white;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+button[disabled]{opacity:0.5;cursor:not-allowed}
+.info{color:var(--muted);line-height:1.6}
+.game-area{margin-top:12px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.03);min-height:100px;color:var(--muted);display:flex;align-items:center}
+.foot{color:var(--muted);font-size:13px;margin-top:8px}
