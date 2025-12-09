@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
+import FishingGame from './FishingGame'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -195,8 +196,15 @@ function App(){
 
       <section className="card">
         <h2>Giao diện game</h2>
-        <button onClick={startGame} disabled={!account}>Bắt đầu trò chơi</button>
-        <div className="game-area">{message || 'Trò chơi sẽ hiện ở đây'}</div>
+        <div style={{marginBottom:8}}>
+          <button onClick={startGame} disabled={!account}>Bắt đầu trò chơi</button>
+        </div>
+        <div className="game-area">
+          {message || 'Trò chơi sẽ hiện ở đây'}
+        </div>
+        <div style={{marginTop:12}}>
+          <FishingGame account={account} />
+        </div>
       </section>
 
       <footer className="foot">Frontend served by Vite. Backend API base: {BASE_URL}</footer>
