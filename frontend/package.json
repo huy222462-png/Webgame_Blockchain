@@ -1,0 +1,9 @@
+{
+  "name": "webgame-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npx http-server -p 8080",
+    "serve:python": "python -m http.server 8080"
+  }
+}

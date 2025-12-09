@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Web Game Blockchain - Đăng nhập MetaMask</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Web Game Blockchain</h1>
+      <p class="desc">Báo cáo về Blockchain — đăng nhập bằng MetaMask</p>
+
+      <div class="card">
+        <div class="row">
+          <button id="connectBtn">Kết nối MetaMask</button>
+          <button id="signBtn" disabled>Đăng nhập (ký)</button>
+        </div>
+
+        <div class="info">
+          <div>Trạng thái: <span id="status">Chưa kết nối</span></div>
+          <div>Địa chỉ: <span id="address">—</span></div>
+          <div>Mạng: <span id="network">—</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Giao diện game (mẫu)</h2>
+        <p>Nhấn "Bắt đầu trò chơi" sau khi đã kết nối MetaMask.</p>
+        <button id="startGameBtn" disabled>Bắt đầu trò chơi</button>
+        <div id="gameArea" class="game-area">Trò chơi sẽ hiện tại ở đây (placeholder)</div>
+      </div>
+
+      <footer class="foot">Mở trang này trong trình duyệt có MetaMask. Nếu không thấy MetaMask, cài đặt tiện ích mở rộng MetaMask.</footer>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
