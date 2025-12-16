@@ -6,3 +6,13 @@ backend/uploads/
 *.log
 /.vscode/
 .DS_Store
+
+# Hardhat files
+cache/
+artifacts/
+deployments/
+*.tsbuildinfo
+
+# Coverage
+coverage/
+coverage.json

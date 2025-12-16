@@ -8,6 +8,9 @@ require('dotenv').config();
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const avatarRoutes = require('./routes/avatarRoutes');
+const gameRoutes = require('./routes/gameRoutes');
+const leaderboardRoutes = require('./routes/leaderboardRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
 const path = require('path');
 const config = require('./config');
 
@@ -20,6 +23,9 @@ app.use('/api/auth', authRoutes);
 // serve uploaded avatars
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/avatar', avatarRoutes);
+app.use('/api/games', gameRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 mongoose.connect(config.MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
