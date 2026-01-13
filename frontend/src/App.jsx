@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import TaiXiuGame from './TaiXiuGame'
 import FishingGame from './FishingGame'
+import TutorialIntegration from './TutorialIntegration'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -209,12 +210,14 @@ function App(){
             <select value={selectedGame} onChange={(e)=>setSelectedGame(e.target.value)}>
               <option value="taixiu">Tài Xỉu</option>
               <option value="fishing">Câu cá (coming soon)</option>
+              <option value="tutorial">Tutorial - MyToken Contract</option>
             </select>
           </div>
 
           <div style={{width:'100%'}}>
             {selectedGame === 'taixiu' && <TaiXiuGame account={account} />}
             {selectedGame === 'fishing' && <FishingGame account={account} />}
+            {selectedGame === 'tutorial' && <TutorialIntegration />}
           </div>
         </div>
       </section>
