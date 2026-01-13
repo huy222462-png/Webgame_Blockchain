@@ -2,6 +2,14 @@
 
 **Full-stack blockchain gaming platform** với **Tài Xỉu** và **Câu Cá** games + **Hardhat Tutorial Integration**
 
+# giau code connect mongodb vào dotenv
+# 📝 NẾU ĐỒNG ĐỘI CẦN SETUP:
+# Họ sẽ:
+
+# Clone repo
+# Copy .env.example → .env
+# Copy .env.example → .env
+# Điền MongoDB URI riêng của họ
 ---
 ## 2. Chạy Backend
 # HOẶC chạy bình thường
@@ -11,9 +19,7 @@
 ## npm run dev
 
 # HOẶC chạy bình thường
-## npm start
-
-## MONGO_URI=mongodb+srv://huy222462_db_user:------------Huytks004pro-----------@cluster0.a98i19j.mongodb.net/?appName=Cluster0
+# npm start
 
 ## ✅ Chạy backend
 ## ✅ Deploy contracts
