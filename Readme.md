@@ -1,213 +1,295 @@
 # 🎮 Blockchain Gaming Platform
 
-Nền tảng game blockchain với **Tài Xỉu (Over/Under)** và **Câu Cá (Fishing)**, được xây dựng trên Ethereum smart contracts.
+**Full-stack blockchain gaming platform** với **Tài Xỉu** và **Câu Cá** games + **Hardhat Tutorial Integration**
 
-## ✨ Đã hoàn thiện
+---
+## 2. Chạy Backend
+## # Chạy với nodemon (tự động restart khi có thay đổi)
+## npm run dev
+# HOẶC chạy bình thường
+## npm start
 
-✅ Smart Contracts (TaiXiuGame.sol, FishingGame.sol)  
-✅ Backend API đầy đủ (Express + MongoDB)  
-✅ Frontend tích hợp blockchain (React + Ethers.js)  
-✅ Deployment scripts và testing  
-✅ Documentation chi tiết  
+## 3. Chạy Frontend (Mở terminal mới)
+## npm run dev
 
-## 🚀 Quick Start
+# HOẶC chạy bình thường
+## npm start
 
-### 1. Cài đặt dependencies
-```bash
-npm install
-cd frontend && npm install && cd ..
-```
+## MONGO_URI=mongodb+srv://user:@Huytks004pro@cluster0.mongodb.net/?appName=Cluster0
 
-### 2. Chạy MongoDB
-```bash
-mongod
-```
+## 📚 HƯỚNG DẪN
 
-### 3. Cấu hình environment
-```bash
-cp .env.example .env
-# Sửa .env với MongoDB URI và các config khác
-```
+**⭐ ĐỌC NGAY:** [Huong-Dan/README.md](Huong-Dan/README.md)
 
-### 4. Deploy Smart Contracts (Local)
-```bash
-# Terminal 1: Start Hardhat network
-npx hardhat node
+### Các file hướng dẫn (trong folder `Huong-Dan/`):
 
-# Terminal 2: Deploy contracts
-npx hardhat run scripts/deploy.js --network localhost
-
-# Copy contract addresses và update vào frontend/.env
-```
-
-### 5. Chạy ứng dụng
-```bash
-# Terminal 3: Backend
-npm run dev
-
-# Terminal 4: Frontend
-cd frontend && npm run dev
-```
-
-### 6. Setup MetaMask
-- Add network: Hardhat Local (http://127.0.0.1:8545, Chain ID: 1337)
-- Import test account từ hardhat node
-
-### 7. Truy cập & Chơi
-http://localhost:5173 🎉
-
-## 📚 Documentation đầy đủ
-
-- **[README_FULL.md](./README_FULL.md)** - Documentation chi tiết với API, contracts, security
-- **[QUICK_START.md](./QUICK_START.md)** - Hướng dẫn setup nhanh nhất
-- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Hướng dẫn deploy lên production
-- **[PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)** - Tổng quan toàn bộ project
-
-## 🎮 Games
-
-### Tài Xỉu (Over/Under)
-- Đặt cược Tài (11-18) hoặc Xỉu (3-10)
-- Min: 0.001 ETH, Max: 1 ETH
-- House edge: 2%
-- Kết quả từ 3 xúc xắc on-chain
-
-### Fishing (Câu Cá)
-- Entry fee: 0.001 ETH/session
-- 5 loại cá: Small, Medium, Large, Rare, Jackpot
-- Jackpot pool system
-- Leaderboard rankings
-
-## 🛠 Tech Stack
-
-- **Blockchain**: Ethereum, Solidity 0.8.20, Hardhat
-- **Backend**: Node.js, Express.js, MongoDB
-- **Frontend**: React 18, Vite, Ethers.js v5
-- **Security**: OpenZeppelin, ReentrancyGuard
-
-## 📋 NPM Scripts
-
-```bash
-npm run dev              # Start backend server
-npm run frontend         # Start frontend app
-npm run compile          # Compile smart contracts
-npm run test             # Run contract tests
-npm run node             # Start Hardhat local node
-npm run deploy:local     # Deploy to local network
-npm run deploy:sepolia   # Deploy to Sepolia testnet
-npm run coverage         # Test coverage report
-```
-
-## 🔗 API Endpoints
-
-```
-# Games
-GET    /api/games/history/:address
-POST   /api/games/result
-GET    /api/games/stats/:gameType
-
-# Leaderboard
-GET    /api/leaderboard/top
-GET    /api/leaderboard/player/:address
-
-# Transactions
-GET    /api/transactions/player/:address
-POST   /api/transactions
-
-# Authentication
-POST   /api/auth/register
-POST   /api/auth/login
-
-# Avatar
-POST   /api/avatar/:address
-```
-
-## 🔒 Security
-
-✅ Implemented:
-- ReentrancyGuard protection
-- Ownable access control
-- Input validation
-- Event logging
-
-⚠️ Production TODO:
-- Chainlink VRF for true randomness
-- Professional security audit
-- Multi-sig wallet
-- Rate limiting
-- JWT authentication
-
-## 🌐 Supported Networks
-
-| Network | Chain ID | Usage |
-|---------|----------|-------|
-| Hardhat Local | 1337 | Development |
-| Sepolia | 11155111 | Testing |
-| Mainnet | 1 | Production |
-
-## 📂 Project Structure
-
-```
-Blockchain/
-├── contracts/              # Smart contracts
-├── scripts/                # Deployment scripts
-├── test/                   # Contract tests
-├── backend/                # Express server
-│   ├── controllers/        # API controllers
-│   ├── models/            # Database models
-│   └── routes/            # API routes
-├── frontend/               # React app
-│   └── src/
-│       ├── utils/         # Blockchain helpers
-│       └── components/    # React components
-└── docs/                   # Documentation
-```
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-npm run test
-
-# With gas reporting
-REPORT_GAS=true npm run test
-
-# Coverage
-npm run coverage
-```
-
-## 🚢 Deployment
-
-### Testnet (Sepolia)
-```bash
-# Get testnet ETH from faucet
-# Update .env with SEPOLIA_RPC_URL and PRIVATE_KEY
-npm run deploy:sepolia
-```
-
-### Production
-Xem [DEPLOYMENT.md](./DEPLOYMENT.md) để có hướng dẫn chi tiết.
-
-## ⚠️ Important Notes
-
-1. **NEVER commit .env file** - Contains sensitive data
-2. **Test on testnet first** before mainnet deployment  
-3. **Backup database regularly**
-4. **Monitor gas costs** for all transactions
-5. **Get security audit** before production
-
-## 📞 Resources
-
-- Hardhat: https://hardhat.org/
-- OpenZeppelin: https://docs.openzeppelin.com/
-- Ethers.js: https://docs.ethers.org/
-- React: https://react.dev/
-
-## 📄 License
-
-MIT License
+1. **[00-FIX-MONGODB.md](Huong-Dan/00-FIX-MONGODB.md)** - Fix lỗi MongoDB
+2. **[01-BAT-DAU-O-DAY.md](Huong-Dan/01-BAT-DAU-O-DAY.md)** - Tóm tắt nhanh 30 phút ⭐
+3. **[02-HUONG-DAN-DEPLOY.md](Huong-Dan/02-HUONG-DAN-DEPLOY.md)** - Deploy chi tiết
+4. **[03-HUONG-DAN-DEMO.md](Huong-Dan/03-HUONG-DAN-DEMO.md)** - Demo cho thầy
+5. **[04-TICH-HOP-TUTORIAL.md](Huong-Dan/04-TICH-HOP-TUTORIAL.md)** - Tích hợp tutorial
+6. **[05-TAI-LIEU-DAY-DU.md](Huong-Dan/05-TAI-LIEU-DAY-DU.md)** - Tài liệu đầy đủ
 
 ---
 
-**⚠️ Disclaimer**: Educational project. DO NOT use in production without proper security audit. Gambling may be illegal in some jurisdictions.
+## 🚀 Quick Start (5 phút)
 
-**Made with ❤️ using Blockchain Technology**
+```powershell
+# 1. Fix MongoDB path
+$env:PATH += ";C:\Program Files\MongoDB\Server\8.2\bin"
+
+# 2. Tạo thư mục data
+New-Item -Path "C:\data\db" -ItemType Directory -Force
+
+# 3. Terminal 1: Start MongoDB
+mongod --dbpath "C:\data\db"
+
+# 4. Terminal 2: Start Backend
+npm run dev
+
+# 5. Terminal 3: Start Frontend  
+cd frontend && npm run dev
+```
+
+**Mở browser:** http://localhost:5173
+
+---
+
+## 📦 Cài Đặt
+
+```bash
+# Install dependencies
+npm install
+cd frontend && npm install && cd ..
+
+# Compile contracts
+npm run compile
+
+# Run tests
+npm run test
+```
+
+---
+
+## 🎯 Deploy
+
+```bash
+# Deploy lên Hera testnet (chain-296)
+npm run deploy:all:hera
+
+# Verify deployment
+npm run verify:deployment
+
+# Copy env file
+copy frontend\.env.deployment frontend\.env
+```
+
+Chi tiết: [02-HUONG-DAN-DEPLOY.md](Huong-Dan/02-HUONG-DAN-DEPLOY.md)
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend:** React 18 + Vite + Ethers.js v6
+- **Backend:** Node.js + Express + MongoDB
+- **Blockchain:** Solidity 0.8.20 + Hardhat 3.1 + OpenZeppelin
+- **Smart Contracts:**
+  - TaiXiuGame.sol - Dice betting game
+  - FishingGame.sol - Fishing game with jackpot
+  - Counter.sol - Tutorial contract
+  - MyToken.sol - ERC20 token (HBAR)
+
+---
+
+## 📂 Cấu Trúc
+
+```
+Blockchain/
+├── Huong-Dan/              # 📚 Tất cả hướng dẫn ở đây!
+│   ├── README.md           # Mục lục hướng dẫn
+│   ├── 00-FIX-MONGODB.md
+│   ├── 01-BAT-DAU-O-DAY.md ⭐
+│   ├── 02-HUONG-DAN-DEPLOY.md
+│   ├── 03-HUONG-DAN-DEMO.md
+│   ├── 04-TICH-HOP-TUTORIAL.md
+│   └── 05-TAI-LIEU-DAY-DU.md
+│
+├── contracts/              # Smart contracts
+│   ├── TaiXiuGame.sol
+│   └── FishingGame.sol
+│
+├── backend/                # Express API
+│   ├── server.js
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   └── hardhat-tutorial/   # Tutorial contracts
+│       ├── contracts/
+│       │   ├── Counter.sol
+│       │   └── MyToken.sol
+│       └── ignition/
+│
+├── frontend/               # React app
+│   └── src/
+│       ├── App.jsx
+│       ├── TaiXiuGame.jsx
+│       ├── FishingGame.jsx
+│       └── TutorialIntegration.jsx
+│
+├── scripts/                # Deploy scripts
+│   ├── deploy.js
+│   ├── deploy-all.js      # Deploy tất cả
+│   └── verify-deployment.js
+│
+└── test/                   # Contract tests
+```
+
+---
+
+## 🎮 Features
+
+### Gaming Platform
+- ✅ Tài Xỉu (Dice betting)
+- ✅ Fishing Game với jackpot
+- ✅ Leaderboard on-chain
+- ✅ Transaction history
+- ✅ MetaMask integration
+
+### Tutorial Integration
+- ✅ Counter contract interaction
+- ✅ ERC20 token display
+- ✅ Real-time updates
+- ✅ Event listening
+
+---
+
+## 🔧 Scripts
+
+```bash
+# Development
+npm run dev              # Start backend
+npm run frontend         # Start frontend
+npm run compile          # Compile contracts
+
+# Deploy
+npm run deploy:all       # Deploy to default network
+npm run deploy:all:hera  # Deploy to Hera testnet
+npm run verify:deployment # Verify contracts
+
+# Testing
+npm run test             # Run contract tests
+npm run coverage         # Test coverage
+
+# Blockchain
+npm run node             # Start local Hardhat node
+```
+
+---
+
+## 🌐 Network Info
+
+**Hera Testnet (Chain-296)**
+- RPC URL: https://testnet.hashio.io/api
+- Chain ID: 296
+- Explorer: https://testnet.hashio.io
+
+---
+
+## 📝 Environment Variables
+
+### Root `.env`
+```env
+PRIVATE_KEY=0x...
+MONGO_URI=mongodb://localhost:27017/blockchain-game
+JWT_SECRET=your-secret
+```
+
+### Frontend `.env`
+```env
+VITE_TAIXIU_CONTRACT=0x...
+VITE_FISHING_CONTRACT=0x...
+VITE_COUNTER_CONTRACT=0x...
+VITE_MYTOKEN_CONTRACT=0x73C6C18b1EDEB8319cA52f02f948c35FA8177401
+VITE_CHAIN_ID=296
+VITE_NETWORK_NAME=Hera Testnet
+VITE_RPC_URL=https://testnet.hashio.io/api
+VITE_API_URL=http://localhost:5000
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### MongoDB không chạy?
+👉 Đọc [00-FIX-MONGODB.md](Huong-Dan/00-FIX-MONGODB.md)
+
+### Deployment fail?
+👉 Đọc [02-HUONG-DAN-DEPLOY.md](Huong-Dan/02-HUONG-DAN-DEPLOY.md) - Troubleshooting section
+
+### MetaMask không connect?
+👉 Đọc [03-HUONG-DAN-DEMO.md](Huong-Dan/03-HUONG-DAN-DEMO.md) - Troubleshooting section
+
+---
+
+## 📖 Documentation
+
+- **Full docs:** [README_FULL.md](README_FULL.md)
+- **Deployment guide:** [DEPLOYMENT.md](DEPLOYMENT.md)
+- **All tutorials:** [Huong-Dan/](Huong-Dan/)
+
+---
+
+## 🎓 Demo
+
+Xem hướng dẫn demo chi tiết: [03-HUONG-DAN-DEMO.md](Huong-Dan/03-HUONG-DAN-DEMO.md)
+
+**Timeline 15 phút:**
+1. Giới thiệu (2 phút)
+2. Demo Gaming (5 phút)
+3. Demo Tutorial (3 phút)
+4. Show code (3 phút)
+5. Q&A (2 phút)
+
+---
+
+## ✅ Checklist
+
+### Trước khi demo:
+- [ ] MongoDB running
+- [ ] Backend running (port 5000)
+- [ ] Frontend running (port 5173)
+- [ ] Contracts deployed
+- [ ] MetaMask connected
+- [ ] Test 1 transaction
+
+### Contracts deployed:
+- [ ] TaiXiuGame
+- [ ] FishingGame
+- [ ] Counter
+- [ ] MyToken ✅ (0x73C6...7401)
+
+---
+
+## 📜 License
+
+ISC
+
+---
+
+## 👤 Author
+
+Nam4 - Blockchain Gaming Platform
+
+---
+
+## 🎉 Getting Started
+
+**Bước 1:** Đọc [Huong-Dan/01-BAT-DAU-O-DAY.md](Huong-Dan/01-BAT-DAU-O-DAY.md)
+
+**Bước 2:** Làm theo hướng dẫn
+
+**Bước 3:** Demo thành công! 🚀
+
+---
+
+**📚 Tất cả hướng dẫn chi tiết trong folder [Huong-Dan/](Huong-Dan/)**
