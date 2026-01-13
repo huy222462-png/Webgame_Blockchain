@@ -13,7 +13,7 @@
 # HOẶC chạy bình thường
 ## npm start
 
-## MONGO_URI=mongodb+srv://huy222462_db_user:Huytks004pro@cluster0.a98i19j.mongodb.net/?appName=Cluster0
+## MONGO_URI=mongodb+srv://huy222462_db_user:------------Huytks004pro-----------@cluster0.a98i19j.mongodb.net/?appName=Cluster0
 
 ## ✅ Chạy backend
 ## ✅ Deploy contracts
