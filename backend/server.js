@@ -1,10 +1,23 @@
-// Simple Express server to run the backend via `node backend/server.js`
+/**
+ * Express Server - Main Entry Point
+ * 
+ * Server luôn chạy, MongoDB kết nối trong background
+ * - Server start ngay lập tức
+ * - MongoDB connect trong background với retry tự động
+ * - API trả về 503 nếu DB chưa ready (middleware checkDB)
+ */
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
-require('dotenv').config();
+const path = require('path');
 
+// Load .env từ thư mục backend (đảm bảo load đúng file)
+const dotenv = require('dotenv');
+const envPath = path.join(__dirname, '.env');
+dotenv.config({ path: envPath });
+
+// Import routes
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const avatarRoutes = require('./routes/avatarRoutes');
@@ -12,59 +25,76 @@ const gameRoutes = require('./routes/gameRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const path = require('path');
-const config = require('./config');
+const playerRoutes = require('./routes/playerRoutes');
 
+// Import config và DB connection
+const config = require('./config');
+const { connectDB, isConnected, disconnectDB } = require('./db/connection');
+
+// Khởi tạo Express app
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
+// Routes
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
-// serve uploaded avatars
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/avatar', avatarRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/player', playerRoutes);
 
-// Cấu hình MongoDB connection với timeout options
-const mongooseOptions = {
-  serverSelectionTimeoutMS: 10000, // Timeout sau 10 giây
-  socketTimeoutMS: 45000, // Socket timeout
-  maxPoolSize: 10, // Số lượng connection tối đa
-  retryWrites: true,
-};
-
-// Kết nối MongoDB
-mongoose.connect(config.MONGO_URI, mongooseOptions)
-  .then(() => {
-    console.log('✅ Connected to MongoDB:', config.MONGO_URI.replace(/\/\/.*@/, '//***@'));
-    mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB connection error:', err);
-    });
-    mongoose.connection.on('disconnected', () => {
-      console.warn('⚠️ MongoDB disconnected');
-    });
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connection error:', err.message);
-    console.error('');
-    console.error('📝 MONGO_URI hiện tại:', config.MONGO_URI);
-    console.error('');
-    console.error('💡 Hãy kiểm tra:');
-    console.error('   1. MongoDB có đang chạy không? (nếu dùng local)');
-    console.error('   2. MONGO_URI trong backend/.env có đúng không?');
-    console.error('   3. Nếu dùng MongoDB Atlas: đã whitelist IP chưa?');
-    console.error('');
-    console.error('📖 Hướng dẫn:');
-    console.error('   - MongoDB Atlas (miễn phí): https://www.mongodb.com/cloud/atlas/register');
-    console.error('   - MongoDB Local: chạy "mongod --dbpath C:\\data\\db" trong terminal khác');
-    console.error('');
-    console.error('⚠️  Server vẫn chạy nhưng các API cần MongoDB sẽ không hoạt động!');
-    // Không exit - để server vẫn chạy và hiển thị lỗi rõ ràng
+// Health check endpoint (không cần DB)
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    db: require('./db/connection').isConnected() ? 'connected' : 'disconnected'
   });
+});
 
-const PORT = config.PORT;
-app.listen(PORT, () => console.log(`Backend đang lắng nghe tại http://localhost:${PORT}`));
+/**
+ * Khởi động server
+ * - Start HTTP server ngay lập tức
+ * - MongoDB connect trong background với retry tự động
+ * - Server luôn chạy, API sẽ trả 503 nếu DB chưa ready
+ */
+async function startServer() {
+  console.log('🚀 Starting server...');
+  try {
+    // Fail-fast: connect to MongoDB first. If this fails, exit with non-zero code.
+    await connectDB();
+    console.log('✅ DB ready, starting HTTP server');
+
+    const PORT = config.PORT;
+    app.listen(PORT, () => {
+      console.log(`✅ Server is running on http://localhost:${PORT}`);
+      console.log(`   Health check: http://localhost:${PORT}/health`);
+    });
+  } catch (err) {
+    console.error('❌ Failed to connect to MongoDB during startup:', err.message);
+    console.error('   Exiting process. Fix MONGO_URI / network and restart.');
+    process.exit(1);
+  }
+}
+
+// Start server (await DB before listen)
+startServer();
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  await disconnectDB();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  await disconnectDB();
+  process.exit(0);
+});

@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const config = require('../config');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const Notification = require('../models/Notification');
@@ -397,22 +398,40 @@ exports.getDashboardStats = async (req, res) => {
 // Đăng ký admin
 exports.registerAdmin = async (req, res) => {
   try {
-    // Kiểm tra MongoDB connection
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({
-        success: false,
-        error: 'MongoDB chưa kết nối. Vui lòng kiểm tra cấu hình MONGO_URI trong file backend/.env'
+    // Validate input
+    const { username, email, password } = req.body;
+
+    // Validate required fields
+    if (!username || !email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Thiếu thông tin bắt buộc: username, email hoặc password' 
       });
     }
 
-    const { username, email, password } = req.body;
-
-    if (!username || !email || !password) {
-      return res.status(400).json({ success: false, error: 'Thiếu username, email hoặc password' });
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email không hợp lệ' 
+      });
     }
 
+    // Validate password length
     if (password.length < 6) {
-      return res.status(400).json({ success: false, error: 'Mật khẩu phải có ít nhất 6 ký tự' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Mật khẩu phải có ít nhất 6 ký tự' 
+      });
+    }
+
+    // Validate username (không rỗng, không có ký tự đặc biệt)
+    if (username.trim().length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Username không được để trống' 
+      });
     }
 
     const existingSuperAdmin = await User.findOne({ role: 'super_admin' });
@@ -459,18 +478,23 @@ exports.registerAdmin = async (req, res) => {
 // Đăng nhập admin
 exports.loginAdmin = async (req, res) => {
   try {
-    // Kiểm tra MongoDB connection
-    if (mongoose.connection.readyState !== 1) {
-      return res.status(503).json({
-        success: false,
-        error: 'MongoDB chưa kết nối. Vui lòng kiểm tra cấu hình MONGO_URI trong file backend/.env'
+    // Validate input
+    const { emailOrUsername, password } = req.body;
+
+    // Validate required fields
+    if (!emailOrUsername || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Thiếu email/username hoặc password' 
       });
     }
 
-    const { emailOrUsername, password } = req.body;
-
-    if (!emailOrUsername || !password) {
-      return res.status(400).json({ success: false, error: 'Thiếu email/username hoặc password' });
+    // Validate password không rỗng
+    if (password.trim().length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Password không được để trống' 
+      });
     }
 
     const query = emailOrUsername.includes('@')

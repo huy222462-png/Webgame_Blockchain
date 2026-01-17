@@ -41,7 +41,9 @@ const UserSchema = new mongoose.Schema(
     deletedAt: { type: Date, default: null },
 
     // Wallet linkage (off-chain mapping to on-chain address)
-    walletAddress: { type: String, lowercase: true, default: null },
+    walletAddress: { type: String, lowercase: true, default: null, sparse: true, unique: true },
+    // Flag to indicate whether user has connected a wallet
+    isWalletConnected: { type: Boolean, default: false },
 
     // Basic game stats (can be extended later or computed from histories)
     gamesPlayed: { type: Number, default: 0 },
@@ -58,7 +60,7 @@ const UserSchema = new mongoose.Schema(
 
 UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ username: 1 }, { unique: false });
-UserSchema.index({ walletAddress: 1 });
+UserSchema.index({ walletAddress: 1 }, { sparse: true });
 UserSchema.index({ status: 1 });
 UserSchema.index({ isDeleted: 1, deletedAt: 1 });
 

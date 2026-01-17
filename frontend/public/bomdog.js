@@ -113,8 +113,35 @@ async function connectWallet() {
     addressEl.textContent = shortAddress(currentAccount);
     connectBtn.textContent = 'Wallet Connected';
 
-    await ensureRegistered();
-    await loadPlayerState();
+      // Enforce: player must be logged in (have access token) before connecting wallet to backend
+      // Look for access token stored by frontend auth flow under 'access_token'
+      const accessToken = localStorage.getItem('access_token');
+      if (!accessToken) {
+        // Inform user to login/register first (backend requires JWT)
+        alert('Vui lòng đăng ký / đăng nhập tài khoản trước khi connect ví.');
+      } else {
+        // Send wallet address to backend so admin can see the mapping
+        try {
+          await fetch((window.API_BASE || 'http://localhost:5000') + '/api/player/connect-wallet', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + accessToken
+            },
+            body: JSON.stringify({ walletAddress: currentAccount })
+          }).then(async (r) => {
+            if (!r.ok) {
+              const j = await r.json().catch(() => ({}));
+              console.warn('Server rejected connect-wallet:', j.error || r.statusText);
+            }
+          });
+        } catch (e) {
+          console.warn('Failed to notify backend about wallet connect', e);
+        }
+      }
+
+      await ensureRegistered();
+      await loadPlayerState();
 
     // Lắng nghe khi user đổi account (chỉ đăng ký một lần)
     if (!isListeningAccounts && window.ethereum && window.ethereum.on) {

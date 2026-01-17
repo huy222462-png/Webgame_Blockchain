@@ -15,13 +15,39 @@ function App(){
   const [status, setStatus] = useState('Chưa kết nối')
   const [message, setMessage] = useState('')
 
-  useEffect(()=>{
-    if(window.ethereum){
-      setHasMeta(true)
-      window.ethereum.on('accountsChanged',(accounts)=>setAccount(accounts[0]||null))
-      window.ethereum.on('chainChanged',(c)=>setChain(c))
-    }
-  },[])
+  useEffect(() => {
+    if (!window.ethereum) return;
+
+    setHasMeta(true);
+    window.ethereum.on('accountsChanged', (accounts) => setAccount(accounts[0] || null));
+    window.ethereum.on('chainChanged', (c) => setChain(c));
+
+    // Immediately try to get current accounts/network without blocking render
+    (async () => {
+      try {
+        const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setAccount(accs[0]);
+        const c = await window.ethereum.request({ method: 'eth_chainId' });
+        setChain(c);
+        setStatus('Đã kết nối');
+      } catch (err) {
+        console.error(err);
+        setStatus('Kết nối thất bại');
+      }
+    })();
+
+    // cleanup
+    return () => {
+      try {
+        if (window.ethereum && window.ethereum.removeListener) {
+          window.ethereum.removeListener('accountsChanged', (accounts) => setAccount(accounts[0] || null));
+          window.ethereum.removeListener('chainChanged', (c) => setChain(c));
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    };
+  }, []);
   const [profile, setProfile] = useState({ name:'', avatar:null })
   const fileInputRef = useRef(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -99,7 +125,7 @@ function App(){
     saveProfile({ ...profile, name: e.target.value })
   }
 
-  async function connect(){
+    async function connect(){
     if(!window.ethereum){
       alert('Vui lòng cài MetaMask')
       return

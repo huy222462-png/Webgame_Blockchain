@@ -1,16 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');
+const checkDBConnection = require('../middleware/checkDB');
 const adminCtrl = require('../controllers/adminController');
 
-// Public routes - không cần auth
-// Thêm route đăng ký admin (public - nhưng chỉ super_admin mới có thể tạo admin)
-router.post('/register', adminCtrl.registerAdmin);
+// Public routes - không cần auth nhưng cần DB connection
+// Đăng ký admin (public - tạo super_admin đầu tiên hoặc admin thường)
+router.post('/register', checkDBConnection, adminCtrl.registerAdmin);
 
-// Thêm route đăng nhập admin (public)
-router.post('/login', adminCtrl.loginAdmin);
+// Đăng nhập admin (public)
+router.post('/login', checkDBConnection, adminCtrl.loginAdmin);
 
 // All other admin routes require ADMIN_KEY header 'x-admin-key' (or ?adminKey=...) hoặc JWT token
+// Và cần DB connection
+router.use(checkDBConnection);
 router.use(adminAuth);
 
 // Dashboard
