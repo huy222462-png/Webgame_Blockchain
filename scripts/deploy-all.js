@@ -46,8 +46,23 @@ async function main() {
   deploymentResults.contracts.FishingGame = fishingAddress;
   console.log("");
 
+
   // 3. Fund FishingGame contract
   console.log("3️⃣  Funding FishingGame contract...");
+
+  // 3. Deploy BomdogGame
+  console.log("3️⃣  Deploying BomdogGame...");
+  const BomdogGame = await hre.ethers.getContractFactory("BomdogGame");
+  const bomdog = await BomdogGame.deploy();
+  await bomdog.waitForDeployment();
+  const bomdogAddress = await bomdog.getAddress();
+  console.log("✅ BomdogGame deployed to:", bomdogAddress);
+  deploymentResults.contracts.BomdogGame = bomdogAddress;
+  console.log("");
+
+  // 4. Fund FishingGame contract
+  console.log("4️⃣  Funding FishingGame contract...");
+
   const fundAmount = hre.ethers.parseEther("0.1");
   const fundTx = await fishing.fundContract({ value: fundAmount });
   await fundTx.wait();
@@ -79,6 +94,10 @@ async function main() {
   console.log("Copy these to frontend/.env:\n");
   console.log(`VITE_TAIXIU_CONTRACT=${taixiuAddress}`);
   console.log(`VITE_FISHING_CONTRACT=${fishingAddress}`);
+
+
+  console.log(`VITE_BOMDOG_CONTRACT=${bomdogAddress}`);
+
   console.log(`VITE_CHAIN_ID=${network.chainId}`);
   console.log(`VITE_NETWORK_NAME=${network.name}`);
   console.log("");
@@ -90,6 +109,10 @@ async function main() {
 # Gaming Contracts
 VITE_TAIXIU_CONTRACT=${taixiuAddress}
 VITE_FISHING_CONTRACT=${fishingAddress}
+
+
+VITE_BOMDOG_CONTRACT=${bomdogAddress}
+
 
 # Network Configuration
 VITE_CHAIN_ID=${network.chainId}
@@ -114,6 +137,10 @@ VITE_API_URL=http://localhost:5000
   console.log("📊 Summary:");
   console.log("  - TaiXiuGame: ", taixiuAddress);
   console.log("  - FishingGame:", fishingAddress);
+
+
+  console.log("  - BomdogGame: ", bomdogAddress);
+
   console.log("  - Network:    ", network.name, `(${network.chainId})`);
   console.log("");
   console.log("📝 Next Steps:");

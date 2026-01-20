@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
@@ -119,9 +119,9 @@ contract TaiXiuGame is ReentrancyGuard, Ownable {
         game.status = GameStatus.ROLLING;
         
         // Simple pseudo-random (NOT SECURE - use Chainlink VRF in production)
-        game.dice1 = (uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender, 1))) % 6) + 1;
-        game.dice2 = (uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender, 2))) % 6) + 1;
-        game.dice3 = (uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender, 3))) % 6) + 1;
+        game.dice1 = (uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender, uint256(1)))) % 6) + 1;
+        game.dice2 = (uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender, uint256(2)))) % 6) + 1;
+        game.dice3 = (uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender, uint256(3)))) % 6) + 1;
         game.totalDice = game.dice1 + game.dice2 + game.dice3;
         
         resolveGame();

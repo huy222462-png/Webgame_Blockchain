@@ -1,7 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import TaiXiuGame from './TaiXiuGame'
-import FishingGame from './FishingGame'
-import TutorialIntegration from './TutorialIntegration'
+import Bomdog from './Bomdog'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -16,15 +14,40 @@ function App(){
   const [chain, setChain] = useState(null)
   const [status, setStatus] = useState('Chưa kết nối')
   const [message, setMessage] = useState('')
-  const [selectedGame, setSelectedGame] = useState('taixiu')
 
-  useEffect(()=>{
-    if(window.ethereum){
-      setHasMeta(true)
-      window.ethereum.on('accountsChanged',(accounts)=>setAccount(accounts[0]||null))
-      window.ethereum.on('chainChanged',(c)=>setChain(c))
-    }
-  },[])
+  useEffect(() => {
+    if (!window.ethereum) return;
+
+    setHasMeta(true);
+    window.ethereum.on('accountsChanged', (accounts) => setAccount(accounts[0] || null));
+    window.ethereum.on('chainChanged', (c) => setChain(c));
+
+    // Immediately try to get current accounts/network without blocking render
+    (async () => {
+      try {
+        const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setAccount(accs[0]);
+        const c = await window.ethereum.request({ method: 'eth_chainId' });
+        setChain(c);
+        setStatus('Đã kết nối');
+      } catch (err) {
+        console.error(err);
+        setStatus('Kết nối thất bại');
+      }
+    })();
+
+    // cleanup
+    return () => {
+      try {
+        if (window.ethereum && window.ethereum.removeListener) {
+          window.ethereum.removeListener('accountsChanged', (accounts) => setAccount(accounts[0] || null));
+          window.ethereum.removeListener('chainChanged', (c) => setChain(c));
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    };
+  }, []);
   const [profile, setProfile] = useState({ name:'', avatar:null })
   const fileInputRef = useRef(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -102,7 +125,7 @@ function App(){
     saveProfile({ ...profile, name: e.target.value })
   }
 
-  async function connect(){
+    async function connect(){
     if(!window.ethereum){
       alert('Vui lòng cài MetaMask')
       return
@@ -149,80 +172,102 @@ function App(){
     }
   }
 
-  function startGame(){
-    if(!account){ alert('Kết nối ví trước khi chơi'); return }
-    setMessage(`Xin chào ${shortAddr(account)} — Trò chơi bắt đầu (placeholder)`)
-  }
-
   return (
-    <div className="app">
-      <header>
-        <h1>Web Game Blockchain (React)</h1>
-        <p className="desc">Đăng nhập bằng MetaMask để chơi</p>
-
-        <div className="avatar-container">
-          <div className="avatar-bubble" title={profile.name || account || 'No account'} onClick={onAvatarClick}>
-            {profile.avatar ? <img src={profile.avatar} alt="avatar"/> : (profile.name ? profile.name[0].toUpperCase() : (account? account[2]: '?'))}
+    <div className="min-h-screen flex flex-col">
+      {/* HEADER */}
+      <header className="border-b border-slate-800/70 bg-slate-950/70 backdrop-blur-xl sticky top-0 z-30">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-rose-500 flex items-center justify-center shadow-lg shadow-amber-500/40">
+              <svg
+                className="w-6 h-6 text-slate-900"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 11V7a3 3 0 0 1 3-3h3" />
+                <path d="M20 11V7a3 3 0 0 0-3-3h-3" />
+                <rect x="4" y="9" width="16" height="10" rx="4" />
+                <path d="M10 15h4" />
+                <circle cx="9" cy="13" r="1" />
+                <circle cx="15" cy="13" r="1" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-display font-semibold text-lg">
+                  Bomdog Clicker
+                </h1>
+                <span className="px-2 py-0.5 text-[11px] rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/40">
+                  GameFi
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                On-chain clicker on Polygon Testnet
+              </p>
+            </div>
           </div>
 
-          {menuOpen && (
-            <div className="avatar-menu">
-              <div className="menu-row">Tài khoản: <strong>{account? shortAddr(account): '—'}</strong></div>
-              <div className="menu-row">
-                <label>Họ tên:</label>
-                <input value={profile.name || ''} onChange={updateName} placeholder="Tên hiển thị" />
-              </div>
-              <div className="menu-row">
-                <label>Avatar:</label>
-                <div className="menu-actions">
-                  <button onClick={()=>fileInputRef.current && fileInputRef.current.click()}>Tải ảnh</button>
-                  <button onClick={removeAvatar} disabled={!profile.avatar}>Xoá</button>
-                </div>
-                <input ref={fileInputRef} type="file" accept="image/*" style={{display:'none'}} onChange={onFileChange} />
-              </div>
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-xs text-slate-300">
+              <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Network:</span>
+              <span>{chain || '—'}</span>
             </div>
-          )}
+            <button
+              onClick={connect}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-sky-400 to-indigo-500 text-slate-950 shadow-lg shadow-sky-500/30 hover:from-sky-300 hover:to-indigo-400 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={!hasMeta}
+            >
+              <span>{hasMeta ? 'Connect Wallet' : 'MetaMask không có'}</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      <section className="card">
-        <div className="controls">
-          <button onClick={connect}>{hasMeta? 'Kết nối MetaMask':'Không tìm thấy MetaMask'}</button>
-          <button onClick={signIn} disabled={!account}>Đăng nhập (ký)</button>
-        </div>
-        <div className="info">
-          <div>Trạng thái: <strong>{status}</strong></div>
-          <div>Địa chỉ: <strong>{account? shortAddr(account): '—'}</strong></div>
-          <div>Mạng: <strong>{chain || '—'}</strong></div>
-        </div>
-      </section>
+      {/* MAIN */}
+      <main className="flex-1">
+        <div className="max-w-6xl mx-auto px-4 py-6 lg:py-8 space-y-4">
+          {/* Info bar */}
+          <section className="rounded-2xl bg-slate-950/80 border border-slate-800/80 shadow-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="text-sm text-slate-300 space-y-1">
+              <div>
+                Trạng thái: <strong>{status}</strong>
+              </div>
+              <div>
+                Địa chỉ: <strong>{account ? shortAddr(account) : '—'}</strong>
+              </div>
+              <div>
+                Mạng: <strong>{chain || '—'}</strong>
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-2 text-xs text-slate-400">
+              <button
+                onClick={signIn}
+                disabled={!account}
+                className="px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 hover:border-slate-500 text-[11px] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Đăng nhập (ký)
+              </button>
+              {message && <div className="max-w-xs text-right whitespace-pre-line">{message}</div>}
+            </div>
+          </section>
 
-      <section className="card">
-        <h2>Giao diện game</h2>
-        <div style={{marginBottom:8}}>
-          <button onClick={startGame} disabled={!account}>Bắt đầu trò chơi</button>
+          {/* GAME LAYOUT */}
+          <Bomdog account={account} />
         </div>
+      </main>
 
-        {/* Box under the start button: choose which game to play */}
-        <div className="game-area" style={{flexDirection:'column',alignItems:'flex-start'}}>
-          <div style={{marginBottom:10, width:'100%'}}>
-            <label style={{marginRight:8}}>Chọn trò chơi:</label>
-            <select value={selectedGame} onChange={(e)=>setSelectedGame(e.target.value)}>
-              <option value="taixiu">Tài Xỉu</option>
-              <option value="fishing">Câu cá (coming soon)</option>
-              <option value="tutorial">Tutorial - MyToken Contract</option>
-            </select>
-          </div>
-
-          <div style={{width:'100%'}}>
-            {selectedGame === 'taixiu' && <TaiXiuGame account={account} />}
-            {selectedGame === 'fishing' && <FishingGame account={account} />}
-            {selectedGame === 'tutorial' && <TutorialIntegration />}
-          </div>
+      {/* FOOTER */}
+      <footer className="border-t border-slate-800/70 bg-slate-950/80 text-xs text-slate-500">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+          <span>Bomdog Clicker v0.1.0</span>
+          <span>Frontend served by Vite — Backend API: {BASE_URL}</span>
         </div>
-      </section>
-
-      <footer className="foot">Frontend served by Vite. Backend API base: {BASE_URL}</footer>
+      </footer>
     </div>
   )
 }

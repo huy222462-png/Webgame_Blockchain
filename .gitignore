@@ -1,3 +1,4 @@
+
 # Dependencies
 node_modules/
 frontend/node_modules/
@@ -51,3 +52,10 @@ coverage.json
 # Optional: Package lock files (if team decides)
 # package-lock.json
 # yarn.lock
+
+node_modules/
+frontend/node_modules/
+.vite/
+dist/
+.env
+

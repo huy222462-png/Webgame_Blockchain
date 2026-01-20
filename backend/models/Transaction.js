@@ -30,9 +30,12 @@ const TransactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['bet', 'withdraw', 'claim', 'session'],
+    enum: ['bet', 'withdraw', 'claim', 'session', 'admin_deposit', 'admin_withdraw', 'transfer'],
     required: true
   },
+  // optional ref to users when transfer/deposit/withdraw performed by admin
+  fromUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  toUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   gameType: {
     type: String,
     enum: ['taixiu', 'fishing'],

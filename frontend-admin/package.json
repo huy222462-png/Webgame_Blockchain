@@ -1,23 +1,20 @@
 {
-  "name": "webgame-frontend",
+  "name": "webgame-admin-frontend",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5174",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --port 5174"
   },
   "dependencies": {
     "react": "^18.2.0",
-<<<<<<< HEAD
-    "react-dom": "^18.2.0"
-=======
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.28.0"
->>>>>>> 0d0fb5c18318369e1000970104b41adf86dcf209
+    "react-router-dom": "^6.20.0"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
     "vite": "^5.0.0"
   }
 }
