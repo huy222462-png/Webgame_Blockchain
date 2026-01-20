@@ -1,94 +1,131 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import { getBomdogContract, shortAddress } from './utils/blockchain'
+import React, { useEffect, useState } from 'react'
+import { useBomdogContract } from './hooks/useBomdogContract'
+import { shortAddress } from './utils/blockchain'
 import bomdogImg from './bomdog.png'
 
-function emptyPlayer() {
-  return {
-    level: 0,
-    clickPower: 0,
-    idleIncome: 0,
-    totalCoins: 0,
-    lastClaim: 0
-  }
-}
-
 export default function Bomdog({ account }) {
-  const [player, setPlayer] = useState(emptyPlayer)
-  const [loading, setLoading] = useState(false)
+  const {
+    loading,
+    error,
+    playerData,
+    loadPlayerData,
+    registerPlayer,
+    earnClick,
+    claimIdle,
+    upgradeClick,
+    upgradeIdle
+  } = useBomdogContract(account)
+
   const [txPending, setTxPending] = useState(false)
-  const [error, setError] = useState('')
+  const [localCoins, setLocalCoins] = useState(0)
 
-  const loadPlayer = useCallback(async () => {
-    if (!account) {
-      setPlayer(emptyPlayer())
-      return
-    }
-    try {
-      setLoading(true)
-      setError('')
-      const contract = await getBomdogContract()
-      const data = await contract.getPlayer(account)
-
-      const level = Number(data.level ?? data[0])
-      const clickPower = Number(data.clickPower ?? data[1])
-      const idleIncome = Number(data.idleIncome ?? data[2])
-      const totalCoins = Number(data.totalCoins ?? data[3])
-      const lastClaim = Number(data.lastClaim ?? data[4])
-
-      // Nếu chưa đăng ký thì auto register
-      if (
-        level === 0 &&
-        clickPower === 0 &&
-        idleIncome === 0 &&
-        totalCoins === 0 &&
-        lastClaim === 0
-      ) {
-        const tx = await contract.registerPlayer()
-        await tx.wait()
-        const fresh = await contract.getPlayer(account)
-        setPlayer({
-          level: Number(fresh.level ?? fresh[0]),
-          clickPower: Number(fresh.clickPower ?? fresh[1]),
-          idleIncome: Number(fresh.idleIncome ?? fresh[2]),
-          totalCoins: Number(fresh.totalCoins ?? fresh[3]),
-          lastClaim: Number(fresh.lastClaim ?? fresh[4])
-        })
-      } else {
-        setPlayer({ level, clickPower, idleIncome, totalCoins, lastClaim })
-      }
-    } catch (e) {
-      console.error(e)
-      setError(e.message || String(e))
-    } finally {
-      setLoading(false)
+  // Load player data when account changes
+  useEffect(() => {
+    if (account) {
+      loadPlayerData()
     }
   }, [account])
 
+  // Update local coins when player data changes
   useEffect(() => {
-    loadPlayer()
-  }, [loadPlayer])
-
-  async function runTx(action) {
-    if (!account) {
-      alert('Vui lòng kết nối ví trước.')
-      return
+    if (playerData) {
+      setLocalCoins(playerData.totalCoins)
     }
-    if (txPending) return
-    setTxPending(true)
-    setError('')
-    try {
-      const contract = await getBomdogContract()
-      const tx = await action(contract)
-      if (tx && tx.wait) {
-        await tx.wait()
+  }, [playerData])
+
+  // Auto register if new player
+  useEffect(() => {
+    async function autoRegister() {
+      if (!account || !playerData) return
+      
+      const { level, clickPower, idleIncome, totalCoins, lastClaim } = playerData
+      
+      // Nếu tất cả đều = 0 thì chưa đăng ký
+      if (level === 0 && clickPower === 0 && idleIncome === 0 && totalCoins === 0 && lastClaim === 0) {
+        try {
+          setTxPending(true)
+          await registerPlayer()
+        } catch (err) {
+          console.error('Auto register failed:', err)
+        } finally {
+          setTxPending(false)
+        }
       }
-      await loadPlayer()
-    } catch (e) {
-      console.error(e)
-      setError(e.message || String(e))
+    }
+    
+    autoRegister()
+  }, [account, playerData])
+
+  const handleClick = async () => {
+    if (!playerData || txPending) return
+    
+    try {
+      setTxPending(true)
+      // Optimistic update
+      setLocalCoins(prev => prev + playerData.clickPower)
+      await earnClick()
+    } catch (err) {
+      console.error('Click failed:', err)
+      // Revert optimistic update
+      setLocalCoins(playerData.totalCoins)
     } finally {
       setTxPending(false)
     }
+  }
+
+  const handleClaimIdle = async () => {
+    if (!playerData || txPending) return
+    
+    try {
+      setTxPending(true)
+      await claimIdle()
+    } catch (err) {
+      console.error('Claim failed:', err)
+    } finally {
+      setTxPending(false)
+    }
+  }
+
+  const handleUpgradeClick = async () => {
+    if (!playerData || txPending) return
+    
+    try {
+      setTxPending(true)
+      await upgradeClick()
+    } catch (err) {
+      console.error('Upgrade click failed:', err)
+    } finally {
+      setTxPending(false)
+    }
+  }
+
+  const handleUpgradeIdle = async () => {
+    if (!playerData || txPending) return
+    
+    try {
+      setTxPending(true)
+      await upgradeIdle()
+    } catch (err) {
+      console.error('Upgrade idle failed:', err)
+    } finally {
+      setTxPending(false)
+    }
+  }
+
+  if (!account) {
+    return (
+      <div className="text-center py-12 text-slate-400">
+        Please connect your wallet to play
+      </div>
+    )
+  }
+
+  if (loading && !playerData) {
+    return (
+      <div className="text-center py-12 text-slate-400">
+        Loading game data...
+      </div>
+    )
   }
 
   return (
@@ -129,17 +166,17 @@ export default function Bomdog({ account }) {
                     src={bomdogImg}
                     alt="Bomdog"
                     className="w-32 h-32 md:w-40 md:h-40 object-contain select-none transform transition-transform duration-150 group-active:scale-95 group-hover:-translate-y-1 cursor-pointer"
-                    onClick={() => runTx(c => c.earnClick())}
+                    onClick={handleClick}
                   />
                   <div className="absolute -top-2 -right-2 px-2 py-1 rounded-full bg-slate-900/90 border border-amber-400/60 text-[11px] font-medium text-amber-300 flex items-center gap-1">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    <span>+{player.clickPower || 0} / click</span>
+                    <span>+{playerData?.clickPower || 0} / click</span>
                   </div>
                 </div>
 
                 <button
                   className="inline-flex items-center justify-center gap-2 w-full rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-rose-500 text-slate-950 font-semibold text-sm py-3 shadow-lg shadow-amber-500/40 hover:brightness-110 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                  onClick={() => runTx(c => c.earnClick())}
+                  onClick={handleClick}
                   disabled={!account || txPending || loading}
                 >
                   {txPending ? 'Đang gửi giao dịch...' : 'Click Bomdog'}
@@ -206,25 +243,25 @@ export default function Bomdog({ account }) {
               <div className="rounded-xl bg-slate-900/70 border border-slate-800 px-3 py-2.5">
                 <p className="text-[11px] text-slate-400">Level</p>
                 <p className="mt-0.5 text-base font-semibold text-slate-50">
-                  {player.level}
+                  {playerData?.level || 0}
                 </p>
               </div>
               <div className="rounded-xl bg-slate-900/70 border border-slate-800 px-3 py-2.5">
                 <p className="text-[11px] text-slate-400">Coins</p>
                 <p className="mt-0.5 text-base font-semibold text-amber-300">
-                  {player.totalCoins}
+                  {localCoins}
                 </p>
               </div>
               <div className="rounded-xl bg-slate-900/70 border border-slate-800 px-3 py-2.5">
                 <p className="text-[11px] text-slate-400">Coin / Click</p>
                 <p className="mt-0.5 text-sm font-semibold text-slate-100">
-                  {player.clickPower}
+                  {playerData?.clickPower || 0}
                 </p>
               </div>
               <div className="rounded-xl bg-slate-900/70 border border-slate-800 px-3 py-2.5">
                 <p className="text-[11px] text-slate-400">Coin / Hour</p>
                 <p className="mt-0.5 text-sm font-semibold text-emerald-300">
-                  {player.idleIncome}
+                  {playerData?.idleIncome || 0}
                 </p>
               </div>
             </div>
@@ -260,7 +297,7 @@ export default function Bomdog({ account }) {
               </div>
               <button
                 className="relative inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-medium bg-gradient-to-r from-emerald-400 to-lime-400 text-slate-950 shadow-md hover:brightness-110 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                onClick={() => runTx(c => c.upgradeClick())}
+                onClick={handleUpgradeClick}
                 disabled={!account || txPending || loading}
               >
                 Upgrade
@@ -292,7 +329,7 @@ export default function Bomdog({ account }) {
               </div>
               <button
                 className="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs font-medium bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-md hover:brightness-110 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                onClick={() => runTx(c => c.upgradeIdle())}
+                onClick={handleUpgradeIdle}
                 disabled={!account || txPending || loading}
               >
                 Upgrade
