@@ -27,7 +27,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^7.0.0",
     "mongoose": "^7.5.0",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "ethers": "^6.16.0"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
@@ -40,7 +41,6 @@
     "@typechain/hardhat": "^9.1.0",
     "@types/node": "^24.10.1",
     "chai": "^4.3.7",
-    "ethers": "^6.16.0",
     "hardhat": "^2.28.0",
     "hardhat-gas-reporter": "^2.3.0",
     "nodemon": "^2.0.22",

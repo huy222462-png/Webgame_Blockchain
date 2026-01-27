@@ -5,24 +5,25 @@
 // - Đồng thời hỗ trợ JWT access token với role: 'admin' | 'super_admin'.
 const { authenticate } = require('./auth');
 
-module.exports = async (req, res, next) => {
+module.exports = (req, res, next) => {
   try {
     const key = req.headers['x-admin-key'] || req.query.adminKey;
     if (key && key === process.env.ADMIN_KEY) {
-      // Legacy admin key access
+      req.user = req.user || { id: null, role: 'admin', source: 'admin-key' };
       return next();
     }
 
-    // Fallback: dùng JWT access token
-    await authenticate(req, res, async (err) => {
-      if (err) return; // authenticate đã gửi response
+    authenticate(req, res, (err) => {
+      if (err) {
+        return; // authenticate đã tự trả response lỗi
+      }
       if (!req.user) {
         return res.status(401).json({ success: false, error: 'Unauthenticated' });
       }
       if (!['admin', 'super_admin'].includes(req.user.role)) {
         return res.status(403).json({ success: false, error: 'Forbidden: admin only' });
       }
-      next();
+      return next();
     });
   } catch (e) {
     console.error('Admin auth error', e);

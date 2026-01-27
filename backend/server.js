@@ -26,6 +26,8 @@ const leaderboardRoutes = require('./routes/leaderboardRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const playerRoutes = require('./routes/playerRoutes');
+const walletRoutes = require('./routes/walletRoutes');
+const economyRoutes = require('./routes/economyRoutes');
 
 // Import config và DB connection
 const config = require('./config');
@@ -48,6 +50,8 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/player', playerRoutes);
+app.use('/api/wallet', walletRoutes);
+app.use('/api', economyRoutes);
 
 // Health check endpoint (không cần DB)
 app.get('/health', (req, res) => {

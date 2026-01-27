@@ -48,8 +48,13 @@ const UserSchema = new mongoose.Schema(
     // Basic game stats (can be extended later or computed from histories)
     gamesPlayed: { type: Number, default: 0 },
 
-    // Store in-game token/point balance as string (wei) to avoid precision issues
+    // Legacy on-chain balance (string wei) kept for backward compatibility
     balance: { type: String, default: '0' },
+
+    // Clicker economy fields
+    totalPoints: { type: Number, default: 0, min: 0 },
+    gameBalance: { type: Number, default: 0, min: 0 },
+    upgradeLevel: { type: Number, default: 0, min: 0 },
 
     // Auth/session helpers
     lastLoginAt: { type: Date, default: null },

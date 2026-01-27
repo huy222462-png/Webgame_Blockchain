@@ -7,6 +7,7 @@ const Transaction = require('../models/Transaction');
 const Notification = require('../models/Notification');
 const GameHistory = require('../models/GameHistory');
 const WalletConnection = require('../models/WalletConnection');
+const WalletUser = require('../models/WalletUser');
 const { BigNumber } = require('ethers');
 
 const SALT_ROUNDS = 10;
@@ -367,7 +368,7 @@ exports.getDashboardStats = async (req, res) => {
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
 
-    const [totalUsers, newUsersToday, onlineUsers, linkedWallets] = await Promise.all([
+    const [totalUsers, newUsersToday, onlineUsers, linkedWallets, walletStats] = await Promise.all([
       User.countDocuments({ isDeleted: { $ne: true } }),
       User.countDocuments({ isDeleted: { $ne: true }, createdAt: { $gte: startOfToday } }),
       User.countDocuments({
@@ -378,7 +379,20 @@ exports.getDashboardStats = async (req, res) => {
       User.countDocuments({
         isDeleted: { $ne: true },
         walletAddress: { $ne: null }
-      })
+      }),
+      (async () => {
+        const [walletTotal, walletOnline, walletScoreAgg] = await Promise.all([
+          WalletUser.countDocuments({}),
+          WalletUser.countDocuments({ lastActive: { $gte: tenMinutesAgo }, status: 'active' }),
+          WalletUser.aggregate([{ $group: { _id: null, total: { $sum: '$score' } } }])
+        ]);
+
+        return {
+          walletTotal,
+          walletOnline,
+          walletScore: walletScoreAgg[0]?.total || 0
+        };
+      })()
     ]);
 
     res.json({
@@ -387,7 +401,8 @@ exports.getDashboardStats = async (req, res) => {
         totalUsers,
         newUsersToday,
         onlineUsers,
-        linkedWallets
+        linkedWallets,
+        wallet: walletStats
       }
     });
   } catch (err) {

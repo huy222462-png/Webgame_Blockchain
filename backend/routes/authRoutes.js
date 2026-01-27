@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const ethers = require('ethers');
+const { verifyMessage } = require('ethers');
 const authController = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 const WalletConnection = require('../models/WalletConnection');
@@ -28,27 +28,36 @@ router.post('/link-wallet', authenticate, authController.linkWallet);
 // POST /api/auth/verify
 // body: { address, message, signature }
 router.post('/verify', async (req, res) => {
-  const { address, message, signature } = req.body;
-  if (!address || !message || !signature) {
-    return res.status(400).json({ success: false, error: 'Missing address/message/signature' });
-  }
-  try {
-    // recover address from signed message
-    const recovered = ethers.utils.verifyMessage(message, signature);
-    const match = recovered.toLowerCase() === address.toLowerCase();
+  const { address, message, signature } = req.body || {};
 
-    // Lưu lịch sử kết nối ví (không ràng buộc với user cụ thể)
+  if (!address || typeof address !== 'string' || !message || typeof message !== 'string') {
+    return res.status(400).json({ success: false, error: 'Missing address or message' });
+  }
+
+  if (!signature || typeof signature !== 'string' || signature.trim().length === 0) {
+    return res.status(400).json({ success: false, error: 'Signature is required' });
+  }
+
+  try {
+    const recovered = verifyMessage(message, signature);
+    const match = recovered && recovered.toLowerCase() === address.toLowerCase();
+
     await WalletConnection.create({
       address: address.toLowerCase(),
       userAgent: req.headers['user-agent'],
       ip: req.ip,
-      action: 'login_signature'
+      action: match ? 'login_signature' : 'login_signature_failed'
     });
 
-    return res.json({ success: match, recovered, match });
+    if (!match) {
+      return res.status(401).json({ success: false, recovered, match, error: 'Signature mismatch' });
+    }
+
+    return res.json({ success: true, recovered, match });
   } catch (err) {
     console.error('Verify error', err);
-    return res.status(500).json({ success: false, error: err.message || String(err) });
+    const statusCode = err?.code === 'INVALID_ARGUMENT' ? 400 : 500;
+    return res.status(statusCode).json({ success: false, error: err.message || String(err) });
   }
 });
 

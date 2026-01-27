@@ -1,22 +1,59 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { getBomdogContract, shortAddress } from './utils/blockchain'
 import bomdogImg from './bomdog.png'
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 function emptyPlayer() {
   return {
     level: 0,
-    clickPower: 0,
+    clickPower: 1,
     idleIncome: 0,
     totalCoins: 0,
     lastClaim: 0
   }
 }
 
-export default function Bomdog({ account }) {
+const CLICK_COOLDOWN_MS = 250
+
+function parseErrorMessage(err) {
+  if (!err) return 'Giao dịch thất bại, thử lại.'
+  const raw = err?.data?.message || err?.reason || err?.message || String(err)
+  if (!raw) return 'Có lỗi xảy ra, thử lại.'
+  const normalized = raw.toLowerCase()
+
+  if (normalized.includes('verifymessage')) {
+    return 'Không thể xác minh chữ ký. Vui lòng bật lại MetaMask và thử lại.'
+  }
+  if (normalized.includes('signature') && normalized.includes('undefined')) {
+    return 'Chữ ký chưa sẵn sàng. Kết nối lại ví và thử gửi lại.'
+  }
+  if (normalized.includes('sai mạng blockchain')) {
+    return 'Sai mạng blockchain'
+  }
+  if (normalized.includes('network') || normalized.includes('chain id')) {
+    return 'Sai mạng blockchain. Chuyển ví sang mạng triển khai chính xác.'
+  }
+
+  return raw
+}
+
+export default function Bomdog({ account, walletProfile, onWalletProfileChange, walletSyncError }) {
   const [player, setPlayer] = useState(emptyPlayer)
   const [loading, setLoading] = useState(false)
   const [txPending, setTxPending] = useState(false)
   const [error, setError] = useState('')
+  const [cooldownActive, setCooldownActive] = useState(false)
+  const cooldownTimer = useRef(null)
+  const [walletStatus, setWalletStatus] = useState('active')
+  const isBanned = walletStatus === 'ban' || walletStatus === 'banned'
+
+  const pointsBalance = walletProfile?.points ?? player.totalCoins ?? 0
+  const coinBalance = walletProfile?.bomdogCoin ?? 0
+  const coinPerClick = walletProfile?.coinPerClick ?? player.clickPower ?? 0
+  const coinPerHour = walletProfile?.coinPerHour ?? player.idleIncome ?? 0
+  const pointsPerClick = walletProfile?.pointsPerClick
+    ?? Math.round(coinPerClick * (walletProfile?.exchangeRate?.pointsPerCoin || 100))
 
   const loadPlayer = useCallback(async () => {
     if (!account) {
@@ -26,7 +63,11 @@ export default function Bomdog({ account }) {
     try {
       setLoading(true)
       setError('')
-      const contract = await getBomdogContract()
+      const contract = await getBomdogContract({ attemptSwitch: false, optional: true })
+      if (!contract) {
+        setError('Chưa cấu hình địa chỉ BomdogGame cho mạng đang dùng. Coin chỉ được lưu off-chain.')
+        return
+      }
       const data = await contract.getPlayer(account)
 
       const level = Number(data.level ?? data[0])
@@ -68,16 +109,56 @@ export default function Bomdog({ account }) {
     loadPlayer()
   }, [loadPlayer])
 
-  async function runTx(action) {
+  useEffect(() => {
+    if (walletProfile) {
+      setPlayer(prev => ({
+        ...prev,
+        level: walletProfile.clickLevel ?? prev.level,
+        totalCoins: walletProfile.points ?? prev.totalCoins,
+        clickPower: walletProfile.coinPerClick ?? prev.clickPower,
+        idleIncome: walletProfile.coinPerHour ?? prev.idleIncome,
+        lastClaim: walletProfile.lastClaimTime ? new Date(walletProfile.lastClaimTime).getTime() : prev.lastClaim
+      }))
+      setWalletStatus(walletProfile.status || 'active')
+    } else {
+      setPlayer(prev => ({ ...prev, totalCoins: 0, clickPower: 1 }))
+      setWalletStatus('active')
+    }
+  }, [walletProfile])
+
+  useEffect(() => {
+    return () => {
+      if (cooldownTimer.current) {
+        clearTimeout(cooldownTimer.current)
+      }
+    }
+  }, [])
+
+  const startCooldown = useCallback(() => {
+    setCooldownActive(true)
+    if (cooldownTimer.current) {
+      clearTimeout(cooldownTimer.current)
+    }
+    cooldownTimer.current = setTimeout(() => {
+      setCooldownActive(false)
+      cooldownTimer.current = null
+    }, CLICK_COOLDOWN_MS)
+  }, [])
+
+  const runTx = useCallback(async action => {
     if (!account) {
-      alert('Vui lòng kết nối ví trước.')
+      setError('Vui lòng kết nối ví trước khi thực hiện hành động này.')
       return
     }
     if (txPending) return
     setTxPending(true)
     setError('')
     try {
-      const contract = await getBomdogContract()
+      const contract = await getBomdogContract({ optional: true })
+      if (!contract) {
+        setError('Chưa cấu hình địa chỉ BomdogGame cho mạng đang dùng. Coin chỉ được lưu off-chain.')
+        return
+      }
       const tx = await action(contract)
       if (tx && tx.wait) {
         await tx.wait()
@@ -85,11 +166,59 @@ export default function Bomdog({ account }) {
       await loadPlayer()
     } catch (e) {
       console.error(e)
-      setError(e.message || String(e))
+      setError(parseErrorMessage(e))
     } finally {
       setTxPending(false)
     }
-  }
+  }, [account, txPending, loadPlayer])
+
+  const handleEarnClick = useCallback(async () => {
+    if (loading || txPending || cooldownActive || cooldownTimer.current) return
+
+    if (!account) {
+      setError('Vui lòng kết nối ví để chơi.')
+      return
+    }
+
+    if (isBanned) {
+      setError('Ví của bạn đã bị khoá bởi admin.')
+      return
+    }
+
+    startCooldown()
+    setError('')
+    setTxPending(true)
+
+    try {
+      const response = await fetch(`${API_BASE}/api/games/click`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: account, increment: 1 })
+      })
+
+      const json = await response.json()
+      if (!response.ok) {
+        throw new Error(json.error || 'Không thể cập nhật điểm')
+      }
+
+      const updatedProfile = json.data
+      setPlayer(prev => ({
+        ...prev,
+        totalCoins: updatedProfile?.points ?? prev.totalCoins,
+        clickPower: updatedProfile?.coinPerClick ?? prev.clickPower,
+        idleIncome: updatedProfile?.coinPerHour ?? prev.idleIncome
+      }))
+      setWalletStatus(updatedProfile?.status || 'active')
+      if (onWalletProfileChange) {
+        onWalletProfileChange(updatedProfile)
+      }
+    } catch (e) {
+      console.error('handleEarnClick error', e)
+      setError(parseErrorMessage(e))
+    } finally {
+      setTxPending(false)
+    }
+  }, [account, cooldownActive, isBanned, loading, onWalletProfileChange, player.clickPower, startCooldown, txPending])
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)]">
@@ -129,20 +258,20 @@ export default function Bomdog({ account }) {
                     src={bomdogImg}
                     alt="Bomdog"
                     className="w-32 h-32 md:w-40 md:h-40 object-contain select-none transform transition-transform duration-150 group-active:scale-95 group-hover:-translate-y-1 cursor-pointer"
-                    onClick={() => runTx(c => c.earnClick())}
+                    onClick={handleEarnClick}
                   />
                   <div className="absolute -top-2 -right-2 px-2 py-1 rounded-full bg-slate-900/90 border border-amber-400/60 text-[11px] font-medium text-amber-300 flex items-center gap-1">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400" />
-                    <span>+{player.clickPower || 0} / click</span>
+                    <span>+{pointsPerClick || 0} pts / click</span>
                   </div>
                 </div>
 
                 <button
                   className="inline-flex items-center justify-center gap-2 w-full rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-rose-500 text-slate-950 font-semibold text-sm py-3 shadow-lg shadow-amber-500/40 hover:brightness-110 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                  onClick={() => runTx(c => c.earnClick())}
-                  disabled={!account || txPending || loading}
+                  onClick={handleEarnClick}
+                  disabled={!account || txPending || loading || cooldownActive || isBanned}
                 >
-                  {txPending ? 'Đang gửi giao dịch...' : 'Click Bomdog'}
+                  {txPending ? 'Đang cập nhật điểm...' : 'Click Bomdog'}
                   <svg
                     className="w-4 h-4"
                     viewBox="0 0 24 24"
@@ -157,7 +286,7 @@ export default function Bomdog({ account }) {
                   </svg>
                 </button>
                 <p className="text-[11px] text-slate-400 text-center">
-                  Mỗi lần click sẽ gửi transaction và tăng tổng coin của bạn trên smart contract.
+                  Điểm được lưu trực tiếp vào máy chủ. Ví bị ban sẽ không thể tiếp tục tích điểm.
                 </p>
               </div>
             </div>
@@ -168,16 +297,24 @@ export default function Bomdog({ account }) {
               <span
                 className={
                   'inline-block w-2 h-2 rounded-full ' +
-                  (txPending ? 'bg-sky-400 animate-pulse' : error ? 'bg-rose-400' : 'bg-emerald-400')
+                  (txPending
+                    ? 'bg-sky-400 animate-pulse'
+                    : error || isBanned || walletSyncError
+                    ? 'bg-rose-400'
+                    : 'bg-emerald-400')
                 }
               />
               <span>
                 {txPending
-                  ? 'Đang xử lý giao dịch…'
+                  ? 'Đang cập nhật điểm...'
                   : error
-                  ? 'Có lỗi xảy ra, thử lại sau.'
+                  ? error
+                  : isBanned
+                  ? 'Ví đã bị ban bởi admin.'
+                  : walletSyncError
+                  ? walletSyncError
                   : loading
-                  ? 'Đang tải dữ liệu người chơi…'
+                  ? 'Đang tải dữ liệu người chơi...'
                   : 'Sẵn sàng.'}
               </span>
             </div>
@@ -210,21 +347,27 @@ export default function Bomdog({ account }) {
                 </p>
               </div>
               <div className="rounded-xl bg-slate-900/70 border border-slate-800 px-3 py-2.5">
-                <p className="text-[11px] text-slate-400">Coins</p>
+                <p className="text-[11px] text-slate-400">Điểm</p>
                 <p className="mt-0.5 text-base font-semibold text-amber-300">
-                  {player.totalCoins}
+                  {pointsBalance.toLocaleString('en-US')}
+                </p>
+              </div>
+              <div className="rounded-xl bg-slate-900/70 border border-slate-800 px-3 py-2.5">
+                <p className="text-[11px] text-slate-400">Bomdog Coin</p>
+                <p className="mt-0.5 text-base font-semibold text-emerald-300">
+                  {coinBalance.toLocaleString('en-US')}
                 </p>
               </div>
               <div className="rounded-xl bg-slate-900/70 border border-slate-800 px-3 py-2.5">
                 <p className="text-[11px] text-slate-400">Coin / Click</p>
                 <p className="mt-0.5 text-sm font-semibold text-slate-100">
-                  {player.clickPower}
+                  {coinPerClick.toFixed ? coinPerClick.toFixed(2) : coinPerClick}
                 </p>
               </div>
               <div className="rounded-xl bg-slate-900/70 border border-slate-800 px-3 py-2.5">
                 <p className="text-[11px] text-slate-400">Coin / Hour</p>
                 <p className="mt-0.5 text-sm font-semibold text-emerald-300">
-                  {player.idleIncome}
+                  {coinPerHour.toFixed ? coinPerHour.toFixed(2) : coinPerHour}
                 </p>
               </div>
             </div>

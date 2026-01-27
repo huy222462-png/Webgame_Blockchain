@@ -1,11 +1,23 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
+import { verifyMessage } from 'ethers'
 import Bomdog from './Bomdog'
+import ExchangePoints from './ExchangePoints'
+import UpgradePanel from './UpgradePanel'
+import WithdrawModal from './WithdrawModal'
+import { EXPECTED_NETWORK_LABEL, EXPECTED_CHAIN_HEX, isExpectedChain } from './utils/blockchain'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const REQUIRED_NETWORK_LABEL = EXPECTED_NETWORK_LABEL || 'Đúng mạng'
 
 function shortAddr(addr){
   if(!addr) return '—'
   return addr.slice(0,6) + '…' + addr.slice(-4)
+}
+
+function shortenSignature(signature) {
+  if (!signature || typeof signature !== 'string') return ''
+  if (signature.length <= 16) return signature
+  return `${signature.slice(0, 12)}...${signature.slice(-8)}`
 }
 
 function App(){
@@ -14,43 +26,114 @@ function App(){
   const [chain, setChain] = useState(null)
   const [status, setStatus] = useState('Chưa kết nối')
   const [message, setMessage] = useState('')
+  const [chainError, setChainError] = useState('')
+  const [isSigned, setIsSigned] = useState(false)
+  const [loginError, setLoginError] = useState('')
+  const [walletProfile, setWalletProfile] = useState(null)
+  const [walletSyncError, setWalletSyncError] = useState('')
+  const [withdrawOpen, setWithdrawOpen] = useState(false)
+
+  const handleChainChanged = useCallback((nextChainId) => {
+    setChain(nextChainId)
+    if (isExpectedChain(nextChainId)) {
+      setChainError('')
+    } else {
+      setChainError(`Sai mạng blockchain — yêu cầu ${REQUIRED_NETWORK_LABEL}`)
+      setIsSigned(false)
+      setStatus(prev => (prev === 'Đã đăng nhập (ký)' || prev === 'Đang xác minh chữ ký' ? 'Đã kết nối' : prev))
+    }
+  }, [])
+
+  const handleAccountsChanged = useCallback((accounts) => {
+    const nextAccount = accounts && accounts.length ? accounts[0] : null
+    setAccount(nextAccount)
+    setIsSigned(false)
+    setMessage('')
+    setLoginError('')
+    if (!nextAccount) {
+      setChainError('')
+      setWalletProfile(null)
+    }
+    setStatus(nextAccount ? 'Đã kết nối' : 'Chưa kết nối')
+  }, [])
+
+  const syncWalletProfile = useCallback(async (address) => {
+    if (!address) {
+      setWalletProfile(null)
+      return
+    }
+
+    try {
+      setWalletSyncError('')
+      const response = await fetch(`${BASE_URL}/api/wallet/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: address })
+      })
+
+      const json = await response.json()
+      if (!response.ok) {
+        throw new Error(json.error || 'Không thể đồng bộ ví')
+      }
+
+      setWalletProfile(json.data)
+    } catch (err) {
+      console.error('syncWalletProfile error', err)
+      setWalletSyncError(err?.message || String(err))
+    }
+  }, [])
 
   useEffect(() => {
     if (!window.ethereum) return;
 
     setHasMeta(true);
-    window.ethereum.on('accountsChanged', (accounts) => setAccount(accounts[0] || null));
-    window.ethereum.on('chainChanged', (c) => setChain(c));
+    window.ethereum.on('accountsChanged', handleAccountsChanged);
+    window.ethereum.on('chainChanged', handleChainChanged);
 
-    // Immediately try to get current accounts/network without blocking render
     (async () => {
       try {
-        const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        setAccount(accs[0]);
-        const c = await window.ethereum.request({ method: 'eth_chainId' });
-        setChain(c);
-        setStatus('Đã kết nối');
+        const accs = await window.ethereum.request({ method: 'eth_accounts' });
+        handleAccountsChanged(accs);
       } catch (err) {
-        console.error(err);
-        setStatus('Kết nối thất bại');
+        console.warn('Không thể lấy danh sách tài khoản', err);
+      }
+      try {
+        const currentChain = await window.ethereum.request({ method: 'eth_chainId' });
+        handleChainChanged(currentChain);
+      } catch (err) {
+        console.warn('Không thể lấy chainId hiện tại', err);
       }
     })();
 
-    // cleanup
     return () => {
       try {
-        if (window.ethereum && window.ethereum.removeListener) {
-          window.ethereum.removeListener('accountsChanged', (accounts) => setAccount(accounts[0] || null));
-          window.ethereum.removeListener('chainChanged', (c) => setChain(c));
+        if (window.ethereum?.removeListener) {
+          window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+          window.ethereum.removeListener('chainChanged', handleChainChanged);
         }
-      } catch (e) {
-        /* ignore */
+      } catch (cleanupErr) {
+        console.warn('Không thể gỡ bỏ listener MetaMask', cleanupErr);
       }
-    };
-  }, []);
+    }
+  }, [handleAccountsChanged, handleChainChanged]);
+
+  useEffect(() => {
+    if (account) {
+      syncWalletProfile(account)
+    } else {
+      setWalletProfile(null)
+    }
+    setWithdrawOpen(false)
+  }, [account, syncWalletProfile])
   const [profile, setProfile] = useState({ name:'', avatar:null })
   const fileInputRef = useRef(null)
   const [menuOpen, setMenuOpen] = useState(false)
+
+  const exchangeRate = walletProfile?.exchangeRate || { points: 1000, coin: 10, pointsPerCoin: 100 }
+  const upgradeInfo = walletProfile?.upgrade || {}
+  const coinBalance = walletProfile?.bomdogCoin || 0
+  const lockedCoin = walletProfile?.lockedBomdogCoin || 0
+  const minWithdraw = walletProfile?.config?.minWithdraw || 50
 
   // load/save profile (name + avatar) per account in localStorage
   useEffect(()=>{
@@ -125,50 +208,135 @@ function App(){
     saveProfile({ ...profile, name: e.target.value })
   }
 
-    async function connect(){
+  async function connect(){
+    setLoginError('')
+    setMessage('')
+    setChainError('')
     if(!window.ethereum){
-      alert('Vui lòng cài MetaMask')
+      setStatus('MetaMask không khả dụng')
+      setMessage('Vui lòng cài đặt MetaMask để tiếp tục.')
       return
     }
     try{
-      const accs = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      setAccount(accs[0])
-      const c = await window.ethereum.request({ method: 'eth_chainId' })
-      setChain(c)
-      setStatus('Đã kết nối')
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+      handleAccountsChanged(accounts)
+
+      let currentChain = null
+      try {
+        currentChain = await window.ethereum.request({ method: 'eth_chainId' })
+      } catch (chainErr) {
+        console.warn('Không thể lấy chainId sau khi kết nối', chainErr)
+      }
+
+      if (currentChain && !isExpectedChain(currentChain) && EXPECTED_CHAIN_HEX) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: EXPECTED_CHAIN_HEX }]
+          })
+          currentChain = await window.ethereum.request({ method: 'eth_chainId' })
+        } catch (switchErr) {
+          console.warn('Người dùng từ chối hoặc không thể chuyển mạng', switchErr)
+          setChainError('Sai mạng blockchain')
+        }
+      }
+
+      if (currentChain) {
+        handleChainChanged(currentChain)
+      }
+
+      if (accounts && accounts[0]) {
+        await syncWalletProfile(accounts[0])
+      }
     }catch(err){
       console.error(err)
       setStatus('Kết nối thất bại')
+      setMessage(err?.message || String(err))
     }
   }
 
   async function signIn(){
-    if(!account){ alert('Kết nối ví trước'); return }
-    const msg = `Đăng nhập WebGame: ${new Date().toISOString()}`
+    setLoginError('')
+    setMessage('')
+
+    if(!account){
+      setLoginError('Vui lòng kết nối ví trước khi đăng nhập.')
+      return
+    }
+
+    const loginMessage = `Đăng nhập WebGame: ${new Date().toISOString()}`
+
     try{
-      const sig = await window.ethereum.request({ method: 'personal_sign', params: [msg, account] })
-      setMessage('Ký thành công — signature: ' + sig.slice(0,12) + '...')
-      setStatus('Đã đăng nhập (ký)')
-      // Send to backend for verification
+      const signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [loginMessage, account]
+      })
+
+      if(!signature){
+        setIsSigned(false)
+        setStatus('Đã kết nối')
+        setLoginError('Không nhận được chữ ký từ ví.')
+        return
+      }
+
+      let recoveredAddress = ''
+      try {
+        recoveredAddress = verifyMessage(loginMessage, signature)
+      } catch (verifyErr) {
+        console.error('Không thể verify message trên frontend', verifyErr)
+        setIsSigned(false)
+        setStatus('Đã kết nối')
+        setLoginError('Không thể xác minh chữ ký trong trình duyệt.')
+        return
+      }
+
+      if (!recoveredAddress || recoveredAddress.toLowerCase() !== account.toLowerCase()) {
+        setIsSigned(false)
+        setStatus('Đã kết nối')
+        setLoginError('Chữ ký không khớp với địa chỉ ví đang kết nối.')
+        return
+      }
+
+      setIsSigned(false)
+      setStatus('Đang xác minh chữ ký')
+      setMessage(`Ký thành công (${shortenSignature(signature)}). Đang xác minh...`)
+
       try{
-        const res = await fetch(`${BASE_URL}/api/auth/verify`, {
+        const response = await fetch(`${BASE_URL}/api/auth/verify`, {
           method: 'POST',
           headers: { 'Content-Type':'application/json' },
-          body: JSON.stringify({ address: account, message: msg, signature: sig })
+          body: JSON.stringify({ address: account, message: loginMessage, signature })
         })
-        const json = await res.json()
-        if(res.ok && json.success){
-          setMessage(prev => prev + '\nXác thực thành công: ' + json.recovered)
+        const json = await response.json()
+
+        if(response.ok && json.success){
+          setIsSigned(true)
+          setStatus('Đã đăng nhập (ký)')
+          setMessage(`Ký thành công (${shortenSignature(signature)}).\nBackend xác thực: ${shortAddr(json.recovered)}`)
+          setLoginError('')
         }else{
-          setMessage(prev => prev + '\nXác thực thất bại: ' + (json.error || JSON.stringify(json)))
+          const backendError = json.error || 'Backend từ chối chữ ký.'
+          setIsSigned(false)
+          setStatus('Đã kết nối')
+          setMessage('')
+          setLoginError(backendError)
         }
       }catch(netErr){
         console.error('Verify request failed', netErr)
-        setMessage(prev => prev + '\nKhông thể liên hệ backend: ' + (netErr.message || netErr))
+        setIsSigned(false)
+        setStatus('Đã kết nối')
+        setMessage('')
+        setLoginError(`Không thể liên hệ backend: ${netErr.message || netErr}`)
       }
     }catch(err){
       console.error(err)
-      setMessage('Ký thất bại: ' + (err.message||err))
+      setIsSigned(false)
+      setStatus('Đã kết nối')
+      if(err?.code === 4001){
+        setLoginError('Bạn đã huỷ ký message.')
+      }else{
+        setLoginError(err?.message || String(err))
+      }
     }
   }
 
@@ -241,8 +409,24 @@ function App(){
                 Địa chỉ: <strong>{account ? shortAddr(account) : '—'}</strong>
               </div>
               <div>
-                Mạng: <strong>{chain || '—'}</strong>
+                Mạng hiện tại: <strong>{chain || '—'}</strong>
               </div>
+              <div>
+                Yêu cầu mạng: <strong>{REQUIRED_NETWORK_LABEL}</strong>
+              </div>
+              <div>
+                Điểm tích lũy: <strong>{walletProfile?.points ?? 0}</strong>
+              </div>
+              {chainError && (
+                <div className="text-xs text-rose-400">
+                  {chainError}
+                </div>
+              )}
+              {walletSyncError && (
+                <div className="text-xs text-rose-400">
+                  {walletSyncError}
+                </div>
+              )}
             </div>
             <div className="flex flex-col items-end gap-2 text-xs text-slate-400">
               <button
@@ -250,16 +434,91 @@ function App(){
                 disabled={!account}
                 className="px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 hover:border-slate-500 text-[11px] disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Đăng nhập (ký)
+                {isSigned ? 'Ký lại' : 'Đăng nhập (ký)'}
               </button>
-              {message && <div className="max-w-xs text-right whitespace-pre-line">{message}</div>}
+              {loginError && (
+                <div className="max-w-xs text-right text-rose-400 whitespace-pre-line">
+                  {loginError}
+                </div>
+              )}
+              {message && (
+                <div className="max-w-xs text-right whitespace-pre-line">
+                  {message}
+                </div>
+              )}
             </div>
           </section>
 
           {/* GAME LAYOUT */}
-          <Bomdog account={account} />
+          <Bomdog
+            account={account}
+            walletProfile={walletProfile}
+            onWalletProfileChange={setWalletProfile}
+            walletSyncError={walletSyncError}
+          />
+
+          {account && walletProfile && (
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
+              <ExchangePoints
+                walletAddress={account}
+                points={walletProfile.points || 0}
+                exchangeRate={exchangeRate}
+                onSuccess={setWalletProfile}
+              />
+
+              <div className="space-y-4">
+                <UpgradePanel
+                  walletAddress={account}
+                  bomdogCoin={coinBalance}
+                  clickLevel={walletProfile.clickLevel || 1}
+                  idleLevel={walletProfile.idleLevel || 1}
+                  nextClickCost={upgradeInfo.nextClickCost}
+                  nextIdleCost={upgradeInfo.nextIdleCost}
+                  coinPerClick={Number(walletProfile.coinPerClick || 0)}
+                  coinPerHour={Number(walletProfile.coinPerHour || 0)}
+                  onSuccess={setWalletProfile}
+                />
+
+                <section className="rounded-2xl bg-slate-950/80 border border-slate-800/70 shadow-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-100">Rút Bomdog Coin</h3>
+                      <p className="text-[11px] text-slate-400">Chuyển coin ra on-chain thông qua smart contract.</p>
+                    </div>
+                    <div className="text-xs text-slate-400 text-right">
+                      <p>Số dư rảnh: <span className="text-emerald-300 font-medium">{coinBalance.toLocaleString('en-US')}</span></p>
+                      <p>Coin khoá: <span className="text-amber-300 font-medium">{lockedCoin.toLocaleString('en-US')}</span></p>
+                      <p>Tối thiểu: <span className="text-slate-100 font-medium">{minWithdraw.toLocaleString('en-US')}</span></p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setWithdrawOpen(true)}
+                    disabled={coinBalance < minWithdraw || lockedCoin > 0}
+                    className="w-full inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-rose-500 text-slate-950 text-sm font-semibold shadow-lg shadow-amber-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {coinBalance < minWithdraw ? 'Chưa đủ số dư để rút' : lockedCoin > 0 ? 'Đang xử lý giao dịch...' : 'Rút coin on-chain'}
+                  </button>
+                  <p className="text-[11px] text-slate-500">
+                    Hệ thống sẽ khoá coin trong khi giao dịch xử lý để tránh double-withdraw.
+                  </p>
+                </section>
+              </div>
+            </div>
+          )}
         </div>
       </main>
+
+      <WithdrawModal
+        isOpen={withdrawOpen}
+        onClose={() => setWithdrawOpen(false)}
+        walletAddress={account}
+        balance={coinBalance}
+        minWithdraw={minWithdraw}
+        onSuccess={(data) => {
+          setWalletProfile(data)
+          setWithdrawOpen(false)
+        }}
+      />
 
       {/* FOOTER */}
       <footer className="border-t border-slate-800/70 bg-slate-950/80 text-xs text-slate-500">
