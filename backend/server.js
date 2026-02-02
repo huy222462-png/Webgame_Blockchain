@@ -12,9 +12,9 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 
-// Load .env từ thư mục backend (đảm bảo load đúng file)
+// Load .env từ thư mục gốc dự án
 const dotenv = require('dotenv');
-const envPath = path.join(__dirname, '.env');
+const envPath = path.join(__dirname, '..', '.env');
 dotenv.config({ path: envPath });
 
 // Import routes

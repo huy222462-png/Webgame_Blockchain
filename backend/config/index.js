@@ -7,12 +7,12 @@
  * - Log warnings nếu config không hợp lệ
  */
 
-// Load .env từ thư mục backend
+// Load .env từ thư mục gốc dự án
 const path = require('path');
 const dotenv = require('dotenv');
 
-// Đảm bảo load .env từ đúng thư mục backend
-const envPath = path.join(__dirname, '..', '.env');
+// Đảm bảo load .env từ thư mục gốc (nơi có hardhat.config.js)
+const envPath = path.join(__dirname, '..', '..', '.env');
 dotenv.config({ path: envPath });
 
 // Debug: Log để kiểm tra

@@ -1,5 +1,48 @@
+# Dependencies
 node_modules/
 frontend/node_modules/
-.vite/
+frontend-admin/node_modules/
+backend/node_modules/
+
+# Build outputs
 dist/
+build/
+.vite/
+artifacts/
+cache/
+typechain-types/
+
+# Environment variables
 .env
+.env.local
+.env.production
+backend/.env
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Hardhat
+coverage/
+coverage.json
+deployments/
+ignition/deployments/
+
+# Testing
+.nyc_output/
+
+# Misc
+.cache/
+tmp/
+temp/

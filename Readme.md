@@ -2,38 +2,56 @@
 
 **Full-stack blockchain gaming platform** với **Tài Xỉu** và **Câu Cá** games + **Hardhat Tutorial Integration**
 
-# giau code connect mongodb vào dotenv
-# 📝 NẾU ĐỒNG ĐỘI CẦN SETUP:
-# Họ sẽ:
+**🔷 NEW: Hỗ trợ Hedera Network** - Phí rẻ hơn 1000x so với Ethereum!  
+**🔄 NEW: Multi-Chain Withdrawal** - Withdraw cross-chain ETH ↔ HBAR!
 
-# Clone repo
-# Copy .env.example → .env
-# Copy .env.example → .env
-# Điền MongoDB URI riêng của họ
 ---
-## 2. Chạy Backend
-# HOẶC chạy bình thường
-## npm start
 
-## 3. Chạy Frontend (Mở terminal mới)
-## npm run dev
+## 🌟 Features
 
-# HOẶC chạy bình thường
-# npm start
+✅ Hỗ trợ **cả Ethereum và Hedera**  
+✅ Tự động chuyển đổi blockchain theo config  
+✅ **Multi-chain withdrawal** - Withdraw cross-chain!  
+✅ Phí giao dịch siêu rẻ với Hedera ($0.0001)  
+✅ Tốc độ nhanh (3-5 giây finality)  
+✅ Gaming economy hoàn chỉnh  
+✅ Admin approval system
 
-## ✅ Chạy backend
-## ✅ Deploy contracts
-## ✅ Tạo file .env cho frontend
-## ✅ Kiểm tra transaction trên HashScan 
+---
 
-## 📚 HƯỚNG DẪN
+## 📚 Tài Liệu Hướng Dẫn
+
+### 🔷 **Migration ETH → HBAR (MỚI!)**
+
+**📚 [INDEX.md](INDEX.md) - Chọn tài liệu phù hợp với vai trò của bạn**
+
+**🔄 Multi-Chain Withdrawal:**
+- **[MULTI_CHAIN_WITHDRAWAL.md](MULTI_CHAIN_WITHDRAWAL.md)** 🔄 API docs - Withdraw cross-chain
+- **[CHANGES_SUMMARY.md](CHANGES_SUMMARY.md)** 📝 Tóm tắt thay đổi
+
+**Quick Links:**
+1. **[CHEAT_SHEET.md](CHEAT_SHEET.md)** ⚡ 2 phút - Commands nhanh
+2. **[QUICK_START_HEDERA.md](QUICK_START_HEDERA.md)** 🚀 7 phút - Setup nhanh
+3. **[TODO_MIGRATION.md](TODO_MIGRATION.md)** ✅ 10 phút - Checklist chi tiết
+4. **[HUONG_DAN_CHUYEN_SANG_HEDERA.md](HUONG_DAN_CHUYEN_SANG_HEDERA.md)** 📖 30 phút - Hướng dẫn đầy đủ
+5. **[SO_SANH_ETH_VS_HEDERA.md](SO_SANH_ETH_VS_HEDERA.md)** 📊 15 phút - So sánh kỹ thuật
+6. **[DECISION_GUIDE.md](DECISION_GUIDE.md)** 🎯 20 phút - Business guide
+7. **[MIGRATION_ETH_TO_HBAR.md](MIGRATION_ETH_TO_HBAR.md)** 🗺️ 10 phút - Tổng quan
+8. **[SUMMARY.md](SUMMARY.md)** 📝 5 phút - Đã làm gì?
+
+**🎯 Bắt đầu nhanh:**
+- Developer: [QUICK_START_HEDERA.md](QUICK_START_HEDERA.md)
+- Tech Lead: [SO_SANH_ETH_VS_HEDERA.md](SO_SANH_ETH_VS_HEDERA.md)
+- Decision Maker: [DECISION_GUIDE.md](DECISION_GUIDE.md)
+
+---
+
+### 📖 **Hướng Dẫn Gốc (MongoDB, Backend, Frontend)**
 
 **⭐ ĐỌC NGAY:** [Huong-Dan/README.md](Huong-Dan/README.md)
 
-### Các file hướng dẫn (trong folder `Huong-Dan/`):
-
 1. **[00-FIX-MONGODB.md](Huong-Dan/00-FIX-MONGODB.md)** - Fix lỗi MongoDB
-2. **[01-BAT-DAU-O-DAY.md](Huong-Dan/01-BAT-DAU-O-DAY.md)** - Tóm tắt nhanh 30 phút ⭐
+2. **[01-BAT-DAU-O-DAY.md](Huong-Dan/01-BAT-DAU-O-DAY.md)** - Tóm tắt nhanh 30 phút
 3. **[02-HUONG-DAN-DEPLOY.md](Huong-Dan/02-HUONG-DAN-DEPLOY.md)** - Deploy chi tiết
 4. **[03-HUONG-DAN-DEMO.md](Huong-Dan/03-HUONG-DAN-DEMO.md)** - Demo cho thầy
 5. **[04-TICH-HOP-TUTORIAL.md](Huong-Dan/04-TICH-HOP-TUTORIAL.md)** - Tích hợp tutorial
