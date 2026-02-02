@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Panel | WebGame Blockchain</title>
+    <!-- Font hiện đại -->
+    <link rel="preconnect" href="https://fonts.bunny.net" />
+    <link
+      href="https://fonts.bunny.net/css?family=inter:400,500,600,700|poppins:500,700"
+      rel="stylesheet"
+    />
+    <!-- Tailwind CDN cho UI Admin -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+              display: ['Poppins', 'system-ui', 'sans-serif']
+            },
+            colors: {
+              'admin-bg': '#0f172a',
+              'admin-card': '#020617',
+              'admin-accent': '#38bdf8'
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-admin-bg text-slate-100 min-h-screen font-sans">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

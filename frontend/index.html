@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bomdog Clicker | Web3 GameFi</title>
+    <!-- Font hiện đại -->
+    <link rel="preconnect" href="https://fonts.bunny.net" />
+    <link
+      href="https://fonts.bunny.net/css?family=inter:400,500,600,700|poppins:500,700"
+      rel="stylesheet"
+    />
+    <!-- Tailwind CDN cho UI GameFi hiện đại -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+              display: ['Poppins', 'system-ui', 'sans-serif']
+            },
+            colors: {
+              'bd-bg': '#0f172a',
+              'bd-card': '#020617',
+              'bd-accent': '#38bdf8',
+              'bd-coin': '#fbbf24',
+              'bd-upgrade': '#22c55e'
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-bd-bg text-slate-100 min-h-screen font-sans">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
